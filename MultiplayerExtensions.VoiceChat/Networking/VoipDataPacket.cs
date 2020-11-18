@@ -5,32 +5,35 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MultiplayerExtensions.VoiceChat
+namespace MultiplayerExtensions.VoiceChat.Networking
 {
-    public class VoipPacket : INetSerializable, IPoolablePacket
+    public class VoipDataPacket : INetSerializable, IPoolablePacket, IVoipPacket
     {
         public string? PlayerId;
         public byte[]? Data;
         public int DataLength;
         public int Index;
 
-        protected static PacketPool<VoipPacket> pool
+        protected static PacketPool<VoipDataPacket> pool
         {
             get
             {
-                return ThreadStaticPacketPool<VoipPacket>.pool;
+                return ThreadStaticPacketPool<VoipDataPacket>.pool;
             }
         }
+        public static VoipDataPacket Obtain() => pool.Obtain();
 
-        public static VoipPacket Create(string playerId, int index, byte[] data, int dataLength)
+        public static VoipDataPacket Create(string playerId, int index, byte[] data, int dataLength)
         {
-            VoipPacket packet = pool.Obtain();
+            VoipDataPacket packet = pool.Obtain();
             packet.PlayerId = playerId;
             packet.Index = index;
             packet.Data = data;
             packet.DataLength = dataLength;
             return packet;
         }
+
+        public VoipPacketType PacketType => VoipPacketType.VoiceData;
 
         public void Deserialize(NetDataReader reader)
         {

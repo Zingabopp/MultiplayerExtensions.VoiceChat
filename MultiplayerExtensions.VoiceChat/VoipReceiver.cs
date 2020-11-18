@@ -1,11 +1,7 @@
 ﻿using Concentus.Structs;
+using MultiplayerExtensions.VoiceChat.Networking;
 using MultiplayerExtensions.VoiceChat.Utilities;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 using Zenject;
 
@@ -39,13 +35,13 @@ namespace MultiplayerExtensions.VoiceChat
             voipSource.volume = 1f;
             voipSource.Play();
             Decoder = new OpusDecoder(48000, 2);
-            if (voipSender != null)
-                voipSender.OnAudioGenerated += Sender_OnAudioGenerated;
-            else
-                Plugin.Log?.Error("No VoipSender available.");
+            //if (voipSender != null)
+            //    voipSender.OnAudioGenerated += HandleAudioDataReceived;
+            //else
+            //    Plugin.Log?.Error("No VoipSender available.");
         }
 
-        private void Sender_OnAudioGenerated(object sender, VoipPacket e)
+        public void HandleAudioDataReceived(object sender, VoipDataPacket e)
         {
             if (e.Data != null && e.DataLength > 0)
             {
@@ -132,6 +128,10 @@ namespace MultiplayerExtensions.VoiceChat
                 //}
                 _voipFragQueue.Write(data, 0, dataLength);
             }
+        }
+        private void OnDestroy()
+        {
+            Plugin.Log?.Debug($"VoipReceiver destroyed.");
         }
     }
 }

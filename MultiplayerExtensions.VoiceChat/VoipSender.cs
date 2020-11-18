@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using Concentus.Structs;
+using MultiplayerExtensions.VoiceChat.Networking;
+using MultiplayerExtensions.VoiceChat.Utilities;
+using System;
 using UnityEngine;
 using Zenject;
-using MultiplayerExtensions.VoiceChat.Utilities;
-using Concentus.Structs;
 
 namespace MultiplayerExtensions.VoiceChat
 {
@@ -20,7 +18,7 @@ namespace MultiplayerExtensions.VoiceChat
         private int lastPos = 0;
         private int index;
         public int inputFreq;
-        public event EventHandler<VoipPacket>? OnAudioGenerated;
+        public event EventHandler<VoipDataPacket>? OnAudioGenerated;
         System.Buffers.ArrayPool<byte> byteAryPool = System.Buffers.ArrayPool<byte>.Shared;
 
         private bool _isListening;
@@ -56,7 +54,7 @@ namespace MultiplayerExtensions.VoiceChat
             if (Microphone.devices.Length == 0)
                 return; 
             _encoder = GetEncoder(_usedMicrophone, 48000);
-            var ratio = inputFreq / (float)(_encoder.SampleRate); 
+            float ratio = inputFreq / (float)(_encoder.SampleRate); 
             int sizeRequired = 960;
             recordingBuffer = new float[sizeRequired];
             recording = Microphone.Start(_usedMicrophone, true, 20, AudioUtils.GetFreqForMic(_usedMicrophone)); 
@@ -116,8 +114,8 @@ namespace MultiplayerExtensions.VoiceChat
                         //}
                         byte[] pcmBytes = byteAryPool.Rent(1275 * 2);
                         //AudioUtils.Convert(recordingBuffer, pcmBytes);
-                        var dataLength = _encoder.Encode(recordingBuffer, 0, 480, pcmBytes, 0, 1275);
-                        VoipPacket frag = VoipPacket.Create("test", index, pcmBytes, dataLength);
+                        int dataLength = _encoder.Encode(recordingBuffer, 0, 480, pcmBytes, 0, 1275);
+                        VoipDataPacket frag = VoipDataPacket.Create("test", index, pcmBytes, dataLength);
 
                         OnAudioGenerated?.Invoke(this, frag);
                         byteAryPool.Return(pcmBytes);

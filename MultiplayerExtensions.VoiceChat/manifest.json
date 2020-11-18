@@ -2,9 +2,9 @@
   "$schema": "https://raw.githubusercontent.com/bsmg/BSIPA-MetadataFileSchema/master/Schema.json",
   "id": "MultiplayerExtensions.VoiceChat",
   "name": "MultiplayerExtensions.VoiceChat",
-  "author": "",
+  "author": "Zingabopp",
   "version": "0.0.1",
-  "description": "",
+  "description": "Adds voice chat to MultiplayerExtensions for Beat Saber.",
   "gameVersion": "1.13.0",
   "dependsOn": {
     "BSIPA": "^4.1.3",

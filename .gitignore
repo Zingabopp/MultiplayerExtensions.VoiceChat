@@ -338,3 +338,7 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+
+Refs/Beat Saber_Data/Managed/*
+!Refs/Beat Saber_Data/Managed/IPA.*
+/bsinstalldir.txt

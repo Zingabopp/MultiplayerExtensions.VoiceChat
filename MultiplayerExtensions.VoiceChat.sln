@@ -7,6 +7,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MultiplayerExtensions.Voice
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MultiplayerExtensions", "MultiplayerExtensions\MultiplayerExtensions\MultiplayerExtensions.csproj", "{A5D28D24-051C-4E8D-AAC4-A118494D7E0A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CollectDependencies", "BS-Plugin-BuildTools\CollectDependencies\CollectDependencies.csproj", "{5F33B310-DC8D-4C0D-877E-BAC3908DE10F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{5582E8A9-05A2-4260-8E73-55BE0995046E}"
+	ProjectSection(SolutionItems) = preProject
+		Refs\refs.txt = Refs\refs.txt
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,9 +28,16 @@ Global
 		{A5D28D24-051C-4E8D-AAC4-A118494D7E0A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A5D28D24-051C-4E8D-AAC4-A118494D7E0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A5D28D24-051C-4E8D-AAC4-A118494D7E0A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F33B310-DC8D-4C0D-877E-BAC3908DE10F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F33B310-DC8D-4C0D-877E-BAC3908DE10F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F33B310-DC8D-4C0D-877E-BAC3908DE10F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F33B310-DC8D-4C0D-877E-BAC3908DE10F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{5F33B310-DC8D-4C0D-877E-BAC3908DE10F} = {5582E8A9-05A2-4260-8E73-55BE0995046E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F6DEF9AC-9F13-4F5D-B19B-852043AB72B8}

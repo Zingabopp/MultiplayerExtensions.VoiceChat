@@ -1,0 +1,3 @@
+[submodule "MultiplayerExtensions"]
+	path = MultiplayerExtensions
+	url = https://github.com/Zingabopp/MultiplayerExtensions.git

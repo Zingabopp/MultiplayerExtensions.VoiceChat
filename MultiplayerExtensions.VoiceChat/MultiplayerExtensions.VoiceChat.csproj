@@ -47,7 +47,7 @@
       <Private>true</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>H:\SteamApps\steamapps\common\Beat Saber\Libs\Newtonsoft.Json.dll</HintPath>
+      <HintPath>$(BeatSaberDir)\Libs\Newtonsoft.Json.dll</HintPath>
       <Private>true</Private>
     </Reference>
     <Reference Include="SiraUtil">
@@ -121,7 +121,7 @@
       <Private>true</Private>
     </Reference>
     <Reference Include="UnityEngine.XRModule">
-      <HintPath>H:\SteamApps\steamapps\common\Beat Saber\Beat Saber_Data\Managed\UnityEngine.XRModule.dll</HintPath>
+      <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\UnityEngine.XRModule.dll</HintPath>
       <Private>true</Private>
     </Reference>
     <Reference Include="Zenject">

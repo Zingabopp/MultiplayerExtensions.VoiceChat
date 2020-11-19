@@ -42,18 +42,6 @@ namespace MultiplayerExtensions.VoiceChat
         public void OnApplicationStart()
         {
             Log?.Debug("OnApplicationStart");
-            //TestAssembly();
-        }
-
-        void TestAssembly()
-        {
-            CSCore.CoreAudioAPI.MMDeviceEnumerator deviceEnumerator = new CSCore.CoreAudioAPI.MMDeviceEnumerator();
-            foreach (var d in deviceEnumerator.EnumAudioEndpoints(CSCore.CoreAudioAPI.DataFlow.All, CSCore.CoreAudioAPI.DeviceState.Active))
-            {
-                Log?.Info($"{d.FriendlyName} | {d.DataFlow} | {d.DeviceState}");
-            }
-            Concentus.Structs.OpusEncoder encoder = new Concentus.Structs.OpusEncoder(48000, 2, Concentus.Enums.OpusApplication.OPUS_APPLICATION_VOIP);
-            ArrayPool<short> arrayPool = ArrayPool<short>.Shared;
         }
 
         [OnExit]

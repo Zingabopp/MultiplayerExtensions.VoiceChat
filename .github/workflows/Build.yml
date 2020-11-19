@@ -31,11 +31,15 @@ jobs:
       run: unzip -q -n bsfiles.zip -d ./Refs
     - name: ExtractMpExRefs
       run: unzip -q -n bsfiles.zip -d ./MultiplayerExtensions/Refs
+    - name: Restore
+      run: dotnet restore
+    - name: Check Nuget
+      run: ll /home/runner/.nuget/packages/system.runtime/4.3.0/lib
     - name: Build
       id: Build
       env: 
         FrameworkPathOverride: /usr/lib/mono/4.8-api
-      run: dotnet build --configuration Release
+      run: dotnet build --configuration Release --no-restore
     - name: GitStatus
       run: git status
     - name: Echo Filename

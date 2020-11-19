@@ -34,7 +34,7 @@ jobs:
     - name: Restore
       run: dotnet restore
     - name: Check Nuget
-      run: ll /home/runner/.nuget/packages/system.runtime/4.3.0/lib
+      run: ls /home/runner/.nuget/packages/system.runtime/4.3.0/lib
     - name: Build
       id: Build
       env: 

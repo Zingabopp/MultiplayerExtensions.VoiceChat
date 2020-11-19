@@ -14,18 +14,18 @@ namespace MultiplayerExtensions.VoiceChat.Networking
         public int DataLength;
         public int Index;
 
-        protected static PacketPool<VoipDataPacket> pool
+        protected static PacketPool<VoipDataPacket> Pool
         {
             get
             {
                 return ThreadStaticPacketPool<VoipDataPacket>.pool;
             }
         }
-        public static VoipDataPacket Obtain() => pool.Obtain();
+        public static VoipDataPacket Obtain() => Pool.Obtain();
 
         public static VoipDataPacket Create(string playerId, int index, byte[] data, int dataLength)
         {
-            VoipDataPacket packet = pool.Obtain();
+            VoipDataPacket packet = Pool.Obtain();
             packet.PlayerId = playerId;
             packet.Index = index;
             packet.Data = data;
@@ -39,6 +39,7 @@ namespace MultiplayerExtensions.VoiceChat.Networking
         {
             PlayerId = reader.GetString();
             Index = reader.GetInt();
+            DataLength = reader.GetInt();
             Data = reader.GetBytesWithLength();
         }
 
@@ -46,16 +47,20 @@ namespace MultiplayerExtensions.VoiceChat.Networking
         {
             writer.Put(PlayerId);
             writer.Put(Index);
+            writer.Put(DataLength);
             if (Data != null)
                 writer.PutBytesWithLength(Data, 0, DataLength);
             else
+            {
+                writer.PutBytesWithLength(Array.Empty<byte>(), 0, 0);
                 Plugin.Log?.Warn($"Trying to serialize a 'VoipPacket' with null data.");
+            }
         }
 
         public void Release()
         {
             Data = null;
-            pool.Release(this);
+            Pool.Release(this);
         }
     }
 }

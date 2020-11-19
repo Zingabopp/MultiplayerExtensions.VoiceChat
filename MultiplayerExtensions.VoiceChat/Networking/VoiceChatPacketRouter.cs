@@ -5,9 +5,29 @@ using Zenject;
 
 namespace MultiplayerExtensions.VoiceChat.Networking
 {
-    public class VoiceChatPacketRouter : IDisposable
+    public sealed class VoiceChatPacketRouter : IDisposable
     {
-        private DiContainer _container;
+        private bool _isConnected;
+
+        public bool IsConnected
+        {
+            get { return _isConnected; }
+            set
+            {
+                VoipSender.Enabled = value;
+                if (value == false)
+                {
+                    VoipSender.StopRecording();
+                }
+                else
+                {
+                    VoipSender.StartRecording();
+                }
+                _isConnected = value; 
+            }
+        }
+
+        private readonly DiContainer _container;
         private IMultiplayerSessionManager SessionManager;
         //private IConnectionManager ConnectionManager;
         //private VoipReceiver VoipReceiver;
@@ -36,25 +56,37 @@ namespace MultiplayerExtensions.VoiceChat.Networking
                 if (!player.isMe)
                     CreatePlayerVoipReceiver(player.userId);
             }
+            if (sessionManager.isConnected)
+                IsConnected = true;
         }
 
         private void SessionManager_connectedEvent()
         {
             Plugin.Log?.Info($"SessionManager Connected");
+            IsConnected = true;
+        }
+        private void SessionManager_Disconnected(DisconnectedReason obj)
+        {
+            Plugin.Log?.Info($"SessionManager Disconnected");
+            IsConnected = false;
+            PlayerReceivers.Clear();
         }
 
         private void AddEvents()
         {
             VoipSender.OnAudioGenerated += VoipSender_OnAudioGenerated;
             SessionManager.connectedEvent += SessionManager_connectedEvent;
+            SessionManager.disconnectedEvent += SessionManager_Disconnected;
             SessionManager.playerConnectedEvent += OnPlayerConnected;
             SessionManager.playerDisconnectedEvent += OnPlayerDisconnected;
         }
+
 
         private void RemoveEvents()
         {
             VoipSender.OnAudioGenerated -= VoipSender_OnAudioGenerated;
             SessionManager.connectedEvent -= SessionManager_connectedEvent;
+            SessionManager.disconnectedEvent -= SessionManager_Disconnected;
             SessionManager.playerConnectedEvent -= OnPlayerConnected;
             SessionManager.playerDisconnectedEvent -= OnPlayerDisconnected;
         }
@@ -70,13 +102,19 @@ namespace MultiplayerExtensions.VoiceChat.Networking
         private void OnPlayerConnected(IConnectedPlayer player)
         {
             string userId = player.userId;
-            CreatePlayerVoipReceiver(userId);
+            GetVoipReceiverForId(userId);
+        }
+
+        private VoipReceiver GetVoipReceiverForId(string userId)
+        {
+            VoipReceiver receiver = PlayerReceivers.GetOrAdd(userId, CreatePlayerVoipReceiver);
+            BindReceiver(receiver);
+            return receiver;
         }
 
         private VoipReceiver CreatePlayerVoipReceiver(string userId)
         {
-            VoipReceiver receiver = PlayerReceivers.GetOrAdd(userId, CreatePlayerVoipReceiver);
-            BindReceiver(receiver);
+            Plugin.Log?.Info($"CreatePlayerVoipReceiver: {userId}");
             return _container.InstantiateComponentOnNewGameObject<VoipReceiver>($"VoipReceiver_{userId}");
         }
 
@@ -91,13 +129,13 @@ namespace MultiplayerExtensions.VoiceChat.Networking
 
         private void VoipSender_OnAudioGenerated(object sender, VoipDataPacket e)
         {
-            Plugin.Log?.Debug($"VoipSender_OnAudioGenerated.");
+            Plugin.Log?.Debug($"VoipSender_OnAudioGenerated. {e.Data?.Length.ToString() ?? "NULL"} | {e.DataLength}");
             Send(e);
         }
 
         private void HandleVoipDataPacket(VoipDataPacket packet, IConnectedPlayer player)
         {
-            Plugin.Log?.Debug($"Received a packet from someone else.");
+            Plugin.Log?.Debug($"Received a packet from someone else. '{packet.Data?.Length}' | {packet.DataLength}");
             if (PlayerReceivers.TryGetValue(player.userId, out VoipReceiver receiver))
             {
                 if (receiver != null)

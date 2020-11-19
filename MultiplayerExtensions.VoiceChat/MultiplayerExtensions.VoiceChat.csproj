@@ -146,9 +146,6 @@
     <PackageReference Include="System.Runtime" Version="4.3.1" />
     <PackageReference Include="System.Runtime.Extensions" Version="4.3.1" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\MultiplayerExtensions\MultiplayerExtensions\MultiplayerExtensions.csproj" />
-  </ItemGroup>
   <Target Name="PreBuild" BeforeTargets="BeforeBuild" Condition="'$(NCRUNCH)' != '1'">
     <Error Text="The BeatSaberModdingTools.Tasks nuget package doesn't seem to be installed." Condition="'$(BSMTTaskAssembly)' == ''" />
     <GetCommitInfo ProjectDir="$(ProjectDir)">

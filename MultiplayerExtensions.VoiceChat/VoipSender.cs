@@ -148,15 +148,15 @@ namespace MultiplayerExtensions.VoiceChat
                         //{
                         //    AudioUtils.Resample(recordingBuffer, resampleBuffer, inputFreq, AudioUtils.GetFrequency(encoder.mode));
                         //}
-                        byte[] pcmBytes = ByteAryPool.Rent(1275 * 2);
+                        byte[] data = ByteAryPool.Rent(1275 * 2);
                         //AudioUtils.Convert(recordingBuffer, pcmBytes);
-                        int dataLength = _encoder.Encode(recordingBuffer, 0, 480, pcmBytes, 0, 1275);
+                        int dataLength = _encoder.Encode(recordingBuffer, 0, 480, data, 0, 1275);
                         if (dataLength == 0)
                             Plugin.Log?.Warn($"Why is DataLength 0?");
-                        VoipDataPacket frag = VoipDataPacket.Create("test", index, pcmBytes, dataLength);
+                        VoipDataPacket frag = VoipDataPacket.Create("test", index, data, dataLength);
 
                         OnAudioGenerated?.Invoke(this, frag);
-                        ByteAryPool.Return(pcmBytes);
+                        ByteAryPool.Return(data);
                     }
                 }
                 length -= recordingBuffer.Length;

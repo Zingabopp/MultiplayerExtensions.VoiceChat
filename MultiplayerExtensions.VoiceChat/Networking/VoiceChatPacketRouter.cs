@@ -135,7 +135,7 @@ namespace MultiplayerExtensions.VoiceChat.Networking
 
         private void HandleVoipDataPacket(VoipDataPacket packet, IConnectedPlayer player)
         {
-            Plugin.Log?.Debug($"Received a packet from someone else. '{packet.Data?.Length}' | {packet.DataLength}");
+            Plugin.Log?.Debug($"Received a packet {player.userName} ({player.userId}). '{packet.Data?.Length}' | {packet.DataLength}");
             if (PlayerReceivers.TryGetValue(player.userId, out VoipReceiver receiver))
             {
                 if (receiver != null)
@@ -162,6 +162,7 @@ namespace MultiplayerExtensions.VoiceChat.Networking
 
         public void Send<T>(T packet) where T : IVoipPacket
         {
+            // packet is released by ConnectedPlayerManager
             SessionManager.Send(packet);
         }
 

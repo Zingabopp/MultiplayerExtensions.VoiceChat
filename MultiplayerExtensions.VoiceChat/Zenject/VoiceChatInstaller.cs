@@ -1,9 +1,4 @@
 ﻿using MultiplayerExtensions.VoiceChat.Networking;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Zenject;
 
 namespace MultiplayerExtensions.VoiceChat.Zenject
@@ -12,8 +7,8 @@ namespace MultiplayerExtensions.VoiceChat.Zenject
     {
         public override void InstallBindings()
         {
-            Container.BindInterfacesAndSelfTo<VoipSender>().AsSingle().NonLazy();
-            Container.Bind<VoipReceiver>().FromNewComponentOnRoot().AsSingle();
+            Container.BindInterfacesAndSelfTo<VoipSender>().AsSingle();
+            Container.Bind<VoipReceiver>().FromNewComponentOnRoot();
             Container.BindInterfacesAndSelfTo<VoiceChatPacketRouter>().AsSingle().NonLazy();
         }
     }

@@ -1,18 +1,16 @@
 ﻿using LiteNetLib.Utils;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MultiplayerExtensions.VoiceChat.Networking
 {
     public class VoipDataPacket : INetSerializable, IPoolablePacket, IVoipPacket
     {
-        public string? PlayerId;
-        public byte[]? Data;
+        protected readonly System.Buffers.ArrayPool<byte> ByteAryPool = System.Buffers.ArrayPool<byte>.Shared;
+        //public string? PlayerId;
         public int DataLength;
+        public byte[]? Data;
         public int Index;
+        private bool ArrayRented;
 
         protected static PacketPool<VoipDataPacket> Pool
         {
@@ -26,7 +24,8 @@ namespace MultiplayerExtensions.VoiceChat.Networking
         public static VoipDataPacket Create(string playerId, int index, byte[] data, int dataLength)
         {
             VoipDataPacket packet = Pool.Obtain();
-            packet.PlayerId = playerId;
+            packet.ArrayRented = false;
+            //packet.PlayerId = playerId;
             packet.Index = index;
             packet.Data = data;
             packet.DataLength = dataLength;
@@ -37,16 +36,23 @@ namespace MultiplayerExtensions.VoiceChat.Networking
 
         public void Deserialize(NetDataReader reader)
         {
-            PlayerId = reader.GetString();
+            ArrayRented = true;
+            //PlayerId = reader.GetString();
             Index = reader.GetInt();
             DataLength = reader.GetInt();
-            Data = reader.GetBytesWithLength();
+            if (DataLength > 0)
+            {
+                Data = ByteAryPool.Rent(DataLength);
+                reader.GetBytes(Data, 0, DataLength);
+            }
+            else
+                Data = Array.Empty<byte>();
         }
 
         public void Serialize(NetDataWriter writer)
         {
-            writer.Put(PlayerId);
-            writer.Put(Index);
+            //writer.Put(PlayerId);
+            //writer.Put(Index);
             writer.Put(DataLength);
             if (Data != null)
                 writer.PutBytesWithLength(Data, 0, DataLength);
@@ -59,7 +65,8 @@ namespace MultiplayerExtensions.VoiceChat.Networking
 
         public void Release()
         {
-            Data = null;
+            if (ArrayRented)
+                ByteAryPool.Return(Data);
             Pool.Release(this);
         }
     }

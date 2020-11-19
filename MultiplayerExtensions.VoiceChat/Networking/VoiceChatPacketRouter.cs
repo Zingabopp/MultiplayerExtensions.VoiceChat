@@ -2,28 +2,34 @@
 using LiteNetLib.Utils;
 using MultiplayerExtensions.Packets;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
+using Zenject;
 
 namespace MultiplayerExtensions.VoiceChat.Networking
 {
     public class VoiceChatPacketRouter : IDisposable
     {
+        private DiContainer _container;
         private IMultiplayerSessionManager SessionManager;
         //private IConnectionManager ConnectionManager;
-        private VoipReceiver VoipReceiver;
+        //private VoipReceiver VoipReceiver;
         private VoipSender VoipSender;
+        private readonly ConcurrentDictionary<string, VoipReceiver> PlayerReceivers = new ConcurrentDictionary<string, VoipReceiver>();
 
         private readonly NetworkPacketSerializer<byte, IConnectedPlayer> _mainSerializer = new NetworkPacketSerializer<byte, IConnectedPlayer>();
         private readonly NetworkPacketSerializer<byte, IConnectedPlayer> _voipDataSerializer = new NetworkPacketSerializer<byte, IConnectedPlayer>();
         private readonly NetworkPacketSerializer<byte, IConnectedPlayer> _voipMetadataSerializer = new NetworkPacketSerializer<byte, IConnectedPlayer>();
-        public VoiceChatPacketRouter(IMultiplayerSessionManager sessionManager, VoipReceiver voipReceiver, VoipSender voipSender)
+        public VoiceChatPacketRouter(IMultiplayerSessionManager sessionManager, VoipSender voipSender, DiContainer container)
         {
+            _container = container;
             SessionManager = sessionManager;
             //ConnectionManager = connectionManager;
-            VoipReceiver = voipReceiver;
+            //VoipReceiver = voipReceiver;
             VoipSender = voipSender;
             AddEvents();
             sessionManager.RegisterSerializer((MultiplayerSessionManager.MessageType)128, _mainSerializer);
@@ -32,6 +38,11 @@ namespace MultiplayerExtensions.VoiceChat.Networking
             _mainSerializer.RegisterSubSerializer((byte)VoipPacketType.VoiceMetadata, _voipMetadataSerializer);
             _voipDataSerializer.RegisterCallback((byte)VoipPacketType.VoiceData, HandleVoipDataPacket, VoipDataPacket.Obtain);
             Plugin.Log?.Debug($"VoiceChatPacketRouter Constructed.");
+            foreach (var player in sessionManager.connectedPlayers)
+            {
+                if (!player.isMe)
+                    CreatePlayerVoipReceiver(player.userId);
+            }
         }
 
         private void SessionManager_connectedEvent()
@@ -43,11 +54,46 @@ namespace MultiplayerExtensions.VoiceChat.Networking
         {
             VoipSender.OnAudioGenerated += VoipSender_OnAudioGenerated;
             SessionManager.connectedEvent += SessionManager_connectedEvent;
+            SessionManager.playerConnectedEvent += OnPlayerConnected;
+            SessionManager.playerDisconnectedEvent += OnPlayerDisconnected;
         }
+
         private void RemoveEvents()
         {
             VoipSender.OnAudioGenerated -= VoipSender_OnAudioGenerated;
             SessionManager.connectedEvent -= SessionManager_connectedEvent;
+            SessionManager.playerConnectedEvent -= OnPlayerConnected;
+            SessionManager.playerDisconnectedEvent -= OnPlayerDisconnected;
+        }
+
+        private void OnPlayerDisconnected(IConnectedPlayer player)
+        {
+            if (PlayerReceivers.TryRemove(player.userId, out VoipReceiver receiver) && receiver != null)
+            {
+                GameObject.Destroy(receiver);
+            }
+        }
+
+        private void OnPlayerConnected(IConnectedPlayer player)
+        {
+            string userId = player.userId;
+            CreatePlayerVoipReceiver(userId);
+        }
+
+        private VoipReceiver CreatePlayerVoipReceiver(string userId)
+        {
+            VoipReceiver receiver = PlayerReceivers.GetOrAdd(userId, CreatePlayerVoipReceiver);
+            BindReceiver(receiver);
+            return _container.InstantiateComponentOnNewGameObject<VoipReceiver>($"VoipReceiver_{userId}");
+        }
+
+        /// <summary>
+        /// Bind the VoipReceiver to a player GameObject (for eventual spacial audio and 'IsTalking' icon over head.
+        /// </summary>
+        /// <param name=""></param>
+        private void BindReceiver(VoipReceiver receiver)
+        {
+            // Set parent transform?
         }
 
         private void VoipSender_OnAudioGenerated(object sender, VoipDataPacket e)
@@ -58,26 +104,28 @@ namespace MultiplayerExtensions.VoiceChat.Networking
 
         private void HandleVoipDataPacket(VoipDataPacket packet, IConnectedPlayer player)
         {
-            if (player.isMe)
+            Plugin.Log?.Debug($"Received a packet from someone else.");
+            if (PlayerReceivers.TryGetValue(player.userId, out VoipReceiver receiver))
             {
-                Plugin.Log?.Debug($"Received a packet from myself.");
+                if (receiver != null)
+                {
+                    try
+                    {
+                        receiver.HandleAudioDataReceived(this, packet);
+                    }
+                    catch (Exception ex)
+                    {
+                        Plugin.Log?.Error($"Error handling VoipDataPacket: {ex.Message}");
+                        Plugin.Log?.Debug(ex);
+                    }
+                }
+                else
+                {
+                    Plugin.Log?.Error($"VoipReceiver is null");
+                }
             }
             else
-                Plugin.Log?.Debug($"Received a packet from someone else.");
-            if (VoipReceiver == null)
-            {
-                Plugin.Log?.Error($"VoipReceiver is null");
-                return;
-            }
-            try
-            {
-                VoipReceiver.HandleAudioDataReceived(this, packet);
-            }
-            catch (Exception ex)
-            {
-                Plugin.Log?.Error($"Error handling VoipDataPacket: {ex.Message}");
-                Plugin.Log?.Debug(ex);
-            }
+                Plugin.Log?.Debug($"Received a Voip packet from {player.userId} ({player.userName}), but they weren't in the receiver dictionary.");
             packet.Release();
         }
 
@@ -92,8 +140,8 @@ namespace MultiplayerExtensions.VoiceChat.Networking
             RemoveEvents();
             SessionManager = null!;
             //ConnectionManager = null!;
-            VoipReceiver = null!;
             VoipSender = null!;
+            PlayerReceivers.Clear();
         }
     }
 

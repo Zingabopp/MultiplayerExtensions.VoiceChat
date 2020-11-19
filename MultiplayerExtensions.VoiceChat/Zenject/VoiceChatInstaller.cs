@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Zenject;
 
-namespace MultiplayerExtensions.VoiceChat
+namespace MultiplayerExtensions.VoiceChat.Zenject
 {
     public class VoiceChatInstaller : Installer
     {

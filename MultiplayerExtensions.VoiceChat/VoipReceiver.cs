@@ -1,6 +1,7 @@
 ﻿using Concentus.Structs;
 using MultiplayerExtensions.VoiceChat.Networking;
 using MultiplayerExtensions.VoiceChat.Utilities;
+using System;
 using System.IO;
 using UnityEngine;
 using Zenject;
@@ -10,8 +11,6 @@ namespace MultiplayerExtensions.VoiceChat
     public class VoipReceiver : MonoBehaviour
     {
         private const int _voipDelay = 1;
-        [Inject]
-        protected VoipSender? voipSender;
         public OpusDecoder Decoder = null!;
         protected AudioSource? voipSource;
         private FifoFloatStream _voipFragQueue = new FifoFloatStream();
@@ -45,7 +44,10 @@ namespace MultiplayerExtensions.VoiceChat
         {
             if (e.Data != null && e.DataLength > 0)
             {
-
+                if (e.Data.Length > e.DataLength)
+                    Plugin.Log?.Debug($"Data length is {e.Data.Length}, expected length is {e.DataLength}");
+                else if(e.Data.Length < e.DataLength) 
+                    Plugin.Log?.Warn($"Data length of '{e.Data.Length}' is less than the expected length of '{e.DataLength}'");
                 float[] floatData = new float[480 * 2];// floatAryPool.Rent(480 * 2);
                 int length = Decoder.Decode(e.Data, 0, e.DataLength, floatData, 0, 5760);
                 Plugin.Log?.Debug($"Playing fragment, length {length}");
@@ -54,7 +56,7 @@ namespace MultiplayerExtensions.VoiceChat
             }
         }
 
-        public void Tick()
+        private void Update()
         {
             if (voipSource != null)
             {
@@ -132,6 +134,9 @@ namespace MultiplayerExtensions.VoiceChat
         private void OnDestroy()
         {
             Plugin.Log?.Debug($"VoipReceiver destroyed.");
+            Destroyed?.Invoke(this, EventArgs.Empty);
         }
+
+        public event EventHandler? Destroyed;
     }
 }

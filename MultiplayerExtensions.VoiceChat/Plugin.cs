@@ -2,6 +2,7 @@
 using IPA.Config;
 using IPA.Config.Stores;
 using MultiplayerExtensions.VoiceChat.Configuration;
+using MultiplayerExtensions.VoiceChat.Zenject;
 using SiraUtil.Zenject;
 using System;
 using System.Buffers;

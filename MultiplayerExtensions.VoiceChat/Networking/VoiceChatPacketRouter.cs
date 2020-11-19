@@ -1,12 +1,5 @@
-﻿using LiteNetLib;
-using LiteNetLib.Utils;
-using MultiplayerExtensions.Packets;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 using Zenject;
 
@@ -38,7 +31,7 @@ namespace MultiplayerExtensions.VoiceChat.Networking
             _mainSerializer.RegisterSubSerializer((byte)VoipPacketType.VoiceMetadata, _voipMetadataSerializer);
             _voipDataSerializer.RegisterCallback((byte)VoipPacketType.VoiceData, HandleVoipDataPacket, VoipDataPacket.Obtain);
             Plugin.Log?.Debug($"VoiceChatPacketRouter Constructed.");
-            foreach (var player in sessionManager.connectedPlayers)
+            foreach (IConnectedPlayer? player in sessionManager.connectedPlayers)
             {
                 if (!player.isMe)
                     CreatePlayerVoipReceiver(player.userId);

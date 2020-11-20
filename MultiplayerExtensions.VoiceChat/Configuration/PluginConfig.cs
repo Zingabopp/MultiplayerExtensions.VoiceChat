@@ -79,9 +79,9 @@ namespace MultiplayerExtensions.VoiceChat.Configuration
         public virtual InputConfig InputSettings { get; set; } = new InputConfig();
 
         public event EventHandler<int>? VoiceChatGainChanged;
-        public event EventHandler<string>? VoiceSettingChanged;
+        public event EventHandler<string?>? VoiceSettingChanged;
 
-        private void RaiseVoiceSettingChanged([CallerMemberName] string setting = null)
+        private void RaiseVoiceSettingChanged([CallerMemberName] string? setting = null)
         {
             VoiceSettingChanged?.Invoke(this, setting);
         }

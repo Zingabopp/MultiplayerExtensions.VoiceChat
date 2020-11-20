@@ -15,6 +15,6 @@ namespace MultiplayerExtensions.VoiceChat.Configuration
         int VoiceChatGain { get; }
 
         event EventHandler<int>? VoiceChatGainChanged;
-        event EventHandler<string>? VoiceSettingChanged;
+        event EventHandler<string?>? VoiceSettingChanged;
     }
 }

@@ -98,7 +98,7 @@ namespace MultiplayerExtensions.VoiceChat
             SelectedMicrophone = _voiceSettings.VoiceChatMicrophone;
         }
 
-        private void OnVoiceSettingChanged(object sender, string e)
+        private void OnVoiceSettingChanged(object sender, string? e)
         {
             if (e == nameof(IVoiceSettings.VoiceChatMicrophone))
                 SelectedMicrophone = _voiceSettings.VoiceChatMicrophone;

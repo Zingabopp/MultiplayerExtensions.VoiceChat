@@ -40,9 +40,9 @@ namespace MultiplayerExtensions.VoiceChat.Networking
         private readonly NetworkPacketSerializer<byte, IConnectedPlayer> _mainSerializer = new NetworkPacketSerializer<byte, IConnectedPlayer>();
         private readonly NetworkPacketSerializer<byte, IConnectedPlayer> _voipDataSerializer = new NetworkPacketSerializer<byte, IConnectedPlayer>();
         private readonly NetworkPacketSerializer<byte, IConnectedPlayer> _voipMetadataSerializer = new NetworkPacketSerializer<byte, IConnectedPlayer>();
-#pragma warning disable CS0649
+#if DEBUG
         private readonly VoipReceiver? dummyReceiver = null;
-#pragma warning restore CS0649
+#endif
         public VoiceChatPacketRouter(IMultiplayerSessionManager sessionManager, VoipSender voipSender, ICodecFactory codecFactory, DiContainer container)
         {
             _container = container;

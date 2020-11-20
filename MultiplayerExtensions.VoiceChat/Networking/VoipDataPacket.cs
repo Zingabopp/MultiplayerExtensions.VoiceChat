@@ -21,7 +21,7 @@ namespace MultiplayerExtensions.VoiceChat.Networking
         }
         public static VoipDataPacket Obtain() => Pool.Obtain();
 
-        public static VoipDataPacket Create(string playerId, int index, byte[] data, int dataLength)
+        public static VoipDataPacket Create(int index, byte[] data, int dataLength)
         {
             VoipDataPacket packet = Pool.Obtain();
             packet.ArrayRented = false;
@@ -52,7 +52,7 @@ namespace MultiplayerExtensions.VoiceChat.Networking
         public void Serialize(NetDataWriter writer)
         {
             //writer.Put(PlayerId);
-            //writer.Put(Index);
+            writer.Put(Index);
             writer.Put(DataLength);
             if (Data != null)
                 writer.PutBytesWithLength(Data, 0, DataLength);

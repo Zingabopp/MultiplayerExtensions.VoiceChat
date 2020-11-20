@@ -32,10 +32,13 @@ namespace MultiplayerExtensions.VoiceChat
             Instance = this;
             PluginMeta = pluginMetadata;
             Log = logger;
-            // Config = conf.Generated<Configuration.PluginConfig>();
+            Config = conf.Generated<PluginConfig>();
             Zenjector = zenjector;
             zenjector.OnApp<VoiceChatInstaller>();
-            Log.Info($"MultiplayerExtensions.VoiceChat: '{VersionInfo.Description}'");
+            Log.Info($"MultiplayerExtensions.VoiceChat v{PluginMeta.Version}: '{VersionInfo.Description}'");
+            var thing = MultiplayerExtensions.VoiceChat.Codecs.Opus.OpusDefaults.Bitrate;
+            if (thing == 0)
+                Log.Warn("OpusDefaults is null.");
         }
 
         [OnStart]

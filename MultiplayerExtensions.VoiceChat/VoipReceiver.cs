@@ -1,4 +1,6 @@
-﻿using Concentus.Structs;
+﻿//using Concentus.Structs;
+using MultiplayerExtensions.VoiceChat.Codecs;
+using MultiplayerExtensions.VoiceChat.Codecs.Opus;
 using MultiplayerExtensions.VoiceChat.Networking;
 using MultiplayerExtensions.VoiceChat.Utilities;
 using System;
@@ -10,8 +12,8 @@ namespace MultiplayerExtensions.VoiceChat
 {
     public class VoipReceiver : MonoBehaviour
     {
-        private const int _voipDelay = 0;
-        public OpusDecoder Decoder = null!;
+        private const int _voipDelay = 1;
+        private IDecoder Decoder = null!;
         protected AudioSource? voipSource;
         private readonly FifoFloatStream _voipFragQueue = new FifoFloatStream();
         private bool _voipPlaying;
@@ -20,6 +22,23 @@ namespace MultiplayerExtensions.VoiceChat
         private int _silentFrames;
         private int _voipDelayCounter;
         protected readonly System.Buffers.ArrayPool<float> FloatAryPool = System.Buffers.ArrayPool<float>.Shared;
+
+        public void Initialize(ICodecFactory codecFactory, ICodecSettings codecSettings)
+        {
+            enabled = false;
+            _voipFragQueue.Flush();
+            _voipDelayCounter = 0;
+            Decoder = codecFactory.CreateDecoder(codecSettings);
+            Plugin.Log?.Debug($"{name} initialized at {codecSettings.Channels}x{codecSettings.SampleRate}Hz");
+            enabled = true;
+        }
+
+        public bool DecoderMatches(string decoderId, ICodecSettings codecSettings)
+        {
+            if (Decoder == null)
+                return false;
+            return Decoder.CodecId == decoderId && Decoder.SettingsMatch(codecSettings);
+        }
 
         protected void Start()
         {
@@ -33,7 +52,7 @@ namespace MultiplayerExtensions.VoiceChat
             voipSource.loop = true;
             voipSource.volume = 1f;
             voipSource.Play();
-            Decoder = new OpusDecoder(48000, 2);
+            //thing.Decode(null, 0, 0,)
             //if (voipSender != null)
             //    voipSender.OnAudioGenerated += HandleAudioDataReceived;
             //else
@@ -42,16 +61,18 @@ namespace MultiplayerExtensions.VoiceChat
 
         public void HandleAudioDataReceived(object sender, VoipDataPacket e)
         {
+            if (!enabled)
+                return;
             if (e.Data != null && e.DataLength > 0)
             {
-                if (e.Data.Length > e.DataLength)
-                    Plugin.Log?.Debug($"Data length is {e.Data.Length}, expected length is {e.DataLength}");
-                else if (e.Data.Length < e.DataLength)
+                //if (e.Data.Length > e.DataLength)
+                //    Plugin.Log?.Debug($"Data length is {e.Data.Length}, expected length is {e.DataLength}");
+                if (e.Data.Length < e.DataLength)
                     Plugin.Log?.Warn($"Data length of '{e.Data.Length}' is less than the expected length of '{e.DataLength}'");
-                float[] floatData = FloatAryPool.Rent(480 * 2);
-                int length = Decoder.Decode(e.Data, 0, e.DataLength, floatData, 0, 5760);
-                Plugin.Log?.Debug($"Playing fragment, length {length}");
-                PlayVoIPFragment(floatData, length * Decoder.NumChannels, e.Index);
+                float[] floatData = FloatAryPool.Rent(4096);
+                int length = Decoder.Decode(e.Data, 0, e.DataLength, floatData, 0);
+                //Plugin.Log?.Debug($"Playing fragment, length {length}x{Decoder.Channels}");
+                PlayVoIPFragment(floatData, length * Decoder.Channels, e.Index);
                 FloatAryPool.Return(floatData);
             }
             else
@@ -60,6 +81,34 @@ namespace MultiplayerExtensions.VoiceChat
 
         protected void Update()
         {
+            if (Input.GetKeyDown(KeyCode.KeypadPlus))
+            {
+                if (Decoder is OpusDecoder opus)
+                {
+                    if (opus.Gain < 100)
+                    {
+                        opus.Gain += 5;
+                        Plugin.Log?.Info($"Decoder gain = {opus.Gain}");
+                    }
+                    else
+                        Plugin.Log?.Warn($"Max gain reached ({opus.Gain})");
+                }
+                else
+                    Plugin.Log?.Warn("No gain support");
+            }
+            else if (Input.GetKeyDown(KeyCode.KeypadMinus))
+            {
+                if (Decoder is OpusDecoder opus && opus.Gain > -50)
+                {
+                    if (opus.Gain > -50)
+                    {
+                        opus.Gain -= 5;
+                        Plugin.Log?.Info($"Decoder gain = {opus.Gain}");
+                    }
+                    else
+                        Plugin.Log?.Warn($"Min gain reached ({opus.Gain})");
+                }
+            }
             if (voipSource != null)
             {
                 if (_voipFragQueue.Length <= 0)
@@ -77,14 +126,17 @@ namespace MultiplayerExtensions.VoiceChat
                 _silentFrames = 999;
             }
         }
+
         protected void OnAudioFilterRead(float[] data, int channels)
         {
+            if (!enabled)
+                Plugin.Log?.Warn($"Disabled, but still handling audio.");
             if (!_voipPlaying)
                 return;
             //Plugin.Log?.Debug($"OnAudioFilterRead: {data.Length} | {channels} channels");
             int sampleRate = AudioSettings.outputSampleRate;
             int dataLen = data.Length / channels;
-            if(_voipBuffer == null)
+            if (_voipBuffer == null)
                 _voipBuffer = new float[dataLen];
 
             int bufferSize = Mathf.CeilToInt(dataLen / (AudioSettings.outputSampleRate / 48000));
@@ -96,6 +148,7 @@ namespace MultiplayerExtensions.VoiceChat
             int read = _voipFragQueue.Read(_voipBuffer, 0, bufferSize);
             AudioUtils.Resample(_voipBuffer, data, read, data.Length, 48000, sampleRate, channels);
         }
+
         public void PlayVoIPFragment(float[] data, int dataLength, int fragIndex)
         {
             if (voipSource != null)// && !InGameOnlineController.Instance.mutedPlayers.Contains(playerInfo.playerId))

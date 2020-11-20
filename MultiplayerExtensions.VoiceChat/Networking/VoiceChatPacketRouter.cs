@@ -40,7 +40,9 @@ namespace MultiplayerExtensions.VoiceChat.Networking
         private readonly NetworkPacketSerializer<byte, IConnectedPlayer> _mainSerializer = new NetworkPacketSerializer<byte, IConnectedPlayer>();
         private readonly NetworkPacketSerializer<byte, IConnectedPlayer> _voipDataSerializer = new NetworkPacketSerializer<byte, IConnectedPlayer>();
         private readonly NetworkPacketSerializer<byte, IConnectedPlayer> _voipMetadataSerializer = new NetworkPacketSerializer<byte, IConnectedPlayer>();
-        private VoipReceiver dummyReceiver;
+#pragma warning disable CS0649
+        private readonly VoipReceiver? dummyReceiver = null;
+#pragma warning restore CS0649
         public VoiceChatPacketRouter(IMultiplayerSessionManager sessionManager, VoipSender voipSender, ICodecFactory codecFactory, DiContainer container)
         {
             _container = container;
@@ -49,8 +51,12 @@ namespace MultiplayerExtensions.VoiceChat.Networking
             //VoipReceiver = voipReceiver;
             CodecFactory = codecFactory;
             VoipSender = voipSender;
+#if DEBUG
             dummyReceiver = container.InstantiateComponentOnNewGameObject<VoipReceiver>();
-            dummyReceiver.Initialize(codecFactory, codecFactory.DefaultSettings);
+            var settings = new Codecs.Opus.OpusSettings() { SampleRate = 48000, Channels = 1 };
+            dummyReceiver.Initialize(codecFactory, settings);
+            voipSender.OnAudioGenerated += (s, e) => { dummyReceiver.HandleAudioDataReceived(s, e); };
+#endif
             AddEvents();
             sessionManager.RegisterSerializer((MultiplayerSessionManager.MessageType)128, _mainSerializer);
             _mainSerializer.RegisterSubSerializer((byte)VoipPacketType.VoiceData, _voipDataSerializer);
@@ -145,8 +151,7 @@ namespace MultiplayerExtensions.VoiceChat.Networking
 
         private void VoipSender_OnAudioGenerated(object sender, VoipDataPacket e)
         {
-            Plugin.Log?.Debug($"VoipSender_OnAudioGenerated. {e.Data?.Length.ToString() ?? "NULL"} | {e.DataLength}");
-            dummyReceiver.HandleAudioDataReceived(sender, e);
+            //Plugin.Log?.Debug($"VoipSender_OnAudioGenerated. {e.Data?.Length.ToString() ?? "NULL"} | {e.DataLength}");
             Send(e);
         }
 
@@ -154,7 +159,9 @@ namespace MultiplayerExtensions.VoiceChat.Networking
         {
             try
             {
+#if DEBUG
                 Plugin.Log?.Debug($"Received a packet {player.userName} ({player.userId}). '{packet.Data?.Length}' | {packet.DataLength}");
+#endif
                 if (PlayerReceivers.TryGetValue(player.userId, out VoipReceiver receiver))
                 {
                     if (receiver != null)

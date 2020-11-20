@@ -1,5 +1,6 @@
-﻿using Concentus.Structs;
+﻿//using Concentus.Structs;
 using MultiplayerExtensions.VoiceChat.Codecs;
+using MultiplayerExtensions.VoiceChat.Codecs.Opus;
 using MultiplayerExtensions.VoiceChat.Networking;
 using MultiplayerExtensions.VoiceChat.Utilities;
 using System;
@@ -11,7 +12,7 @@ namespace MultiplayerExtensions.VoiceChat
 {
     public class VoipReceiver : MonoBehaviour
     {
-        private const int _voipDelay = 0;
+        private const int _voipDelay = 1;
         private IDecoder Decoder = null!;
         protected AudioSource? voipSource;
         private readonly FifoFloatStream _voipFragQueue = new FifoFloatStream();
@@ -28,6 +29,7 @@ namespace MultiplayerExtensions.VoiceChat
             _voipFragQueue.Flush();
             _voipDelayCounter = 0;
             Decoder = codecFactory.CreateDecoder(codecSettings);
+            Plugin.Log?.Debug($"{name} initialized at {codecSettings.Channels}x{codecSettings.SampleRate}Hz");
             enabled = true;
         }
 
@@ -63,13 +65,13 @@ namespace MultiplayerExtensions.VoiceChat
                 return;
             if (e.Data != null && e.DataLength > 0)
             {
-                if (e.Data.Length > e.DataLength)
-                    Plugin.Log?.Debug($"Data length is {e.Data.Length}, expected length is {e.DataLength}");
-                else if (e.Data.Length < e.DataLength)
+                //if (e.Data.Length > e.DataLength)
+                //    Plugin.Log?.Debug($"Data length is {e.Data.Length}, expected length is {e.DataLength}");
+                if (e.Data.Length < e.DataLength)
                     Plugin.Log?.Warn($"Data length of '{e.Data.Length}' is less than the expected length of '{e.DataLength}'");
                 float[] floatData = FloatAryPool.Rent(4096);
                 int length = Decoder.Decode(e.Data, 0, e.DataLength, floatData, 0);
-                Plugin.Log?.Debug($"Playing fragment, length {length}");
+                //Plugin.Log?.Debug($"Playing fragment, length {length}x{Decoder.Channels}");
                 PlayVoIPFragment(floatData, length * Decoder.Channels, e.Index);
                 FloatAryPool.Return(floatData);
             }
@@ -79,6 +81,34 @@ namespace MultiplayerExtensions.VoiceChat
 
         protected void Update()
         {
+            if (Input.GetKeyDown(KeyCode.KeypadPlus))
+            {
+                if (Decoder is OpusDecoder opus)
+                {
+                    if (opus.Gain < 100)
+                    {
+                        opus.Gain += 5;
+                        Plugin.Log?.Info($"Decoder gain = {opus.Gain}");
+                    }
+                    else
+                        Plugin.Log?.Warn($"Max gain reached ({opus.Gain})");
+                }
+                else
+                    Plugin.Log?.Warn("No gain support");
+            }
+            else if (Input.GetKeyDown(KeyCode.KeypadMinus))
+            {
+                if (Decoder is OpusDecoder opus && opus.Gain > -50)
+                {
+                    if (opus.Gain > -50)
+                    {
+                        opus.Gain -= 5;
+                        Plugin.Log?.Info($"Decoder gain = {opus.Gain}");
+                    }
+                    else
+                        Plugin.Log?.Warn($"Min gain reached ({opus.Gain})");
+                }
+            }
             if (voipSource != null)
             {
                 if (_voipFragQueue.Length <= 0)
@@ -96,6 +126,7 @@ namespace MultiplayerExtensions.VoiceChat
                 _silentFrames = 999;
             }
         }
+
         protected void OnAudioFilterRead(float[] data, int channels)
         {
             if (!enabled)

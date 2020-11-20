@@ -8,6 +8,7 @@ namespace MultiplayerExtensions.VoiceChat.Codecs.Opus
 {
     public class OpusDecoder : IDecoder
     {
+        private const int MaxGain = 7000;
         protected readonly Concentus.Structs.OpusDecoder Decoder;
         private readonly OpusSettings _settings = new OpusSettings();
 
@@ -16,14 +17,24 @@ namespace MultiplayerExtensions.VoiceChat.Codecs.Opus
         public int SampleRate { get => _settings.SampleRate; protected set => _settings.SampleRate = value; }
         public int Channels { get => _settings.Channels; protected set => _settings.Channels = value; }
 
+        /// <summary>
+        /// Recommended -50 to 100
+        /// </summary>
+        public int Gain
+        {
+            get => (Decoder.Gain * 100) / MaxGain;
+            set => Decoder.Gain = (value * MaxGain) / 100;
+        }
+
         public OpusDecoder(int sampleRate, int numChannels)
         {
             SampleRate = sampleRate;
             Channels = numChannels;
             Decoder = new Concentus.Structs.OpusDecoder(sampleRate, numChannels);
+            Decoder.Gain = 50;
         }
 
-        public bool SettingsMatch(ICodecSettings other) 
+        public bool SettingsMatch(ICodecSettings other)
         {
             if (other == null)
                 return false;

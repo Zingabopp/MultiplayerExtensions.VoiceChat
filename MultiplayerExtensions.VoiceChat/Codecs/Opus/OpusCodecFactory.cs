@@ -16,27 +16,24 @@
 
         public OpusDecoder CreateDecoder(OpusSettings opusSettings)
         {
-            if (opusSettings == null)
-                opusSettings = DefaultSettings;
+            opusSettings ??= DefaultSettings;
             return new OpusDecoder(opusSettings.SampleRate, opusSettings.Channels);
         }
-
-        public OpusEncoder CreateEncoder(OpusSettings opusSettings)
-        {
-            if (opusSettings == null)
-                opusSettings = DefaultSettings;
-            OpusEncoder encoder = new OpusEncoder(opusSettings.SampleRate, opusSettings.Channels, opusSettings.FrameDuration, opusSettings.Bitrate);
-            return encoder;
-        }
-        public OpusDecoder CreateDecoder(int sampleRate, int channels, OpusSettings? opusSettings = null)
+        public OpusDecoder CreateDecoder(int sampleRate, int channels)
         {
             return new OpusDecoder(sampleRate, channels);
         }
 
+        public OpusEncoder CreateEncoder(OpusSettings opusSettings)
+        {
+            opusSettings ??= DefaultSettings;
+            OpusEncoder encoder = new OpusEncoder(opusSettings.SampleRate, opusSettings.Channels, opusSettings.FrameDuration, opusSettings.Bitrate);
+            return encoder;
+        }
+
         public OpusEncoder CreateEncoder(int sampleRate, int channels, OpusSettings? opusSettings = null)
         {
-            if (opusSettings == null)
-                opusSettings = DefaultSettings;
+            opusSettings ??= DefaultSettings;
             OpusEncoder encoder = new OpusEncoder(sampleRate, channels, opusSettings.FrameDuration, opusSettings.Bitrate);
             return encoder;
         }
@@ -50,10 +47,14 @@
 
         IDecoder ICodecFactory.CreateDecoder(ICodecSettings codecSettings) => CreateDecoder(OpusSettings.CloneSettings(codecSettings));
 
-        //IEncoder ICodecFactory.CreateEncoder(int sampleRate, int channels, ICodecSettings codecSettings)
-        //    => CreateEncoder(sampleRate, channels, OpusSettings.CloneSettings(codecSettings));
+        IEncoder ICodecFactory.CreateEncoder(int sampleRate, int channels)
+            => CreateEncoder(sampleRate, channels, DefaultSettings);
+        IEncoder ICodecFactory.CreateEncoder(int sampleRate, int channels, ICodecSettings? codecSettings)
+            => CreateEncoder(sampleRate, channels, OpusSettings.CloneSettings(codecSettings ?? DefaultSettings));
 
-        //IDecoder ICodecFactory.CreateDecoder(int sampleRate, int channels, ICodecSettings codecSettings)
-        //    => CreateDecoder(sampleRate, channels, OpusSettings.CloneSettings(codecSettings));
+        IDecoder ICodecFactory.CreateDecoder(int sampleRate, int channels)
+            => CreateDecoder(sampleRate, channels);
+        IDecoder ICodecFactory.CreateDecoder(int sampleRate, int channels, ICodecSettings? codecSettings)
+            => CreateDecoder(sampleRate, channels);
     }
 }

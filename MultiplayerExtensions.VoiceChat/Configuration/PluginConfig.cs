@@ -8,45 +8,84 @@ using Newtonsoft.Json;
 [assembly: InternalsVisibleTo(GeneratedStore.AssemblyVisibilityTarget)]
 namespace MultiplayerExtensions.VoiceChat.Configuration
 {
-    internal class PluginConfig
+    internal class PluginConfig : IVoiceSettings
     {
-        private float voiceChatVolume = 0.8f;
+        private int voiceChatGain = 0;
+        private string voiceChatMicrophone = "";
+        private bool micEnabled = true;
+        private bool spatialAudio = false;
 
         [SerializedName(nameof(EnableVoiceChat))]
         [JsonProperty(nameof(EnableVoiceChat), Order = 0)]
         public virtual bool EnableVoiceChat { get; set; }
 
-        [SerializedName(nameof(VoiceChatVolume))]
-        [JsonProperty(nameof(VoiceChatVolume), Order = 10)]
-        public virtual float VoiceChatVolume
+        [SerializedName(nameof(VoiceChatGain))]
+        [JsonProperty(nameof(VoiceChatGain), Order = 10)]
+        public virtual int VoiceChatGain
         {
-            get => voiceChatVolume;
+            get => voiceChatGain;
             set
             {
-                if (voiceChatVolume == value) return;
-                voiceChatVolume = value;
-                var handler = VoiceChatVolumeChanged;
-                handler?.Invoke(this, value);
+                value = Math.Min(value, 100);
+                value = Math.Max(value, -50);
+                if (voiceChatGain == value) 
+                    return;
+                voiceChatGain = value;
+                VoiceChatGainChanged?.Invoke(this, value);
             }
         }
-        public event EventHandler<float>? VoiceChatVolumeChanged;
 
         [SerializedName(nameof(SpatialAudio))]
         [JsonProperty(nameof(SpatialAudio), Order = 20)]
-        public virtual bool SpatialAudio { get; set; } = false;
-
+        public virtual bool SpatialAudio
+        {
+            get => spatialAudio;
+            set
+            {
+                if (spatialAudio == value)
+                    return;
+                spatialAudio = value;
+                RaiseVoiceSettingChanged();
+            }
+        }
         [SerializedName(nameof(MicEnabled))]
         [JsonProperty(nameof(MicEnabled), Order = 30)]
-        public virtual bool MicEnabled { get; set; } = true;
-
+        public virtual bool MicEnabled
+        {
+            get => micEnabled;
+            set
+            {
+                if (micEnabled == value)
+                    return;
+                micEnabled = value;
+                RaiseVoiceSettingChanged();
+            }
+        }
         [SerializedName(nameof(VoiceChatMicrophone))]
         [JsonProperty(nameof(VoiceChatMicrophone), Order = 60)]
-        public string VoiceChatMicrophone { get; set; } = "";
-
+        public string VoiceChatMicrophone
+        {
+            get => voiceChatMicrophone;
+            set
+            {
+                if (voiceChatMicrophone == value)
+                    return;
+                voiceChatMicrophone = value;
+                RaiseVoiceSettingChanged();
+            }
+        }
         [NonNullable]
         [JsonProperty(nameof(InputSettings), Order = 70)]
         public virtual InputConfig InputSettings { get; set; } = new InputConfig();
-        
+
+        public event EventHandler<int>? VoiceChatGainChanged;
+        public event EventHandler<string>? VoiceSettingChanged;
+
+        private void RaiseVoiceSettingChanged([CallerMemberName] string setting = null)
+        {
+            VoiceSettingChanged?.Invoke(this, setting);
+        }
+
         /// <summary>
         /// This is called whenever BSIPA reads the config from disk (including when file changes are detected).
         /// </summary>
@@ -71,5 +110,5 @@ namespace MultiplayerExtensions.VoiceChat.Configuration
             // This instance's members populated from other
         }
     }
-    
+
 }

@@ -13,8 +13,9 @@ namespace MultiplayerExtensions.VoiceChat.Zenject
         public override void InstallBindings()
         {
             ICodecFactory codecFactory = new OpusCodecFactory();
-            var encoder = codecFactory.CreateEncoder();
+            var encoder = codecFactory.CreateEncoder(48000, 1);
             Container.Bind<PluginConfig>().FromInstance(Plugin.Config ?? throw new InvalidOperationException("Plugin.Config is null"));
+            Container.Bind<IVoiceSettings>().FromInstance(Plugin.Config);
             Container.Bind<IPTTConfig>().FromInstance(Plugin.Config.InputSettings);
             Container.Bind<IInputController>().To<InputController>().AsSingle();
             Container.Bind<ICodecFactory>().FromInstance(codecFactory);

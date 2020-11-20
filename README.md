@@ -14,7 +14,6 @@ All packets for this mod use MessageType `128`.
 ### VoiceData
 |Name|Type|Description|
 |---|---|---|
-|PlayerId|string|UserId of the player creating this packet (likely to be removed).|
 |Index|int|Index of the packet, also probably unnecessary.|
 |DataLength|int|Length of the data in bytes.|
-|Data|byte[]|Encoded audio data.|
+|Data|byte[`DataLength`]|Encoded audio data.|

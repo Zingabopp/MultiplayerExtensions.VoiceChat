@@ -63,7 +63,7 @@ namespace MultiplayerExtensions.VoiceChat.Configuration
         }
         [SerializedName(nameof(VoiceChatMicrophone))]
         [JsonProperty(nameof(VoiceChatMicrophone), Order = 60)]
-        public string VoiceChatMicrophone
+        public virtual string VoiceChatMicrophone
         {
             get => voiceChatMicrophone;
             set

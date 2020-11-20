@@ -164,8 +164,11 @@ namespace MultiplayerExtensions.VoiceChat
 
             if (!_inputController.UsePushToTalk || _inputController.TalkEnabled) // For now just always enable talk if PTT disabled
             {
-                if (!IsListening && !_inputController.UsePushToTalk)
+                if (!IsListening && _inputController.UsePushToTalk)
+                {
+                    Plugin.Log?.Debug($"PTT Triggered.");
                     _inputController.TriggerFeedback();
+                }
                 IsListening = true;
             }
             else if (Input.GetKey(KeyCode.K))

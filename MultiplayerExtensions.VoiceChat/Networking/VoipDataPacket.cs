@@ -95,8 +95,8 @@ namespace MultiplayerExtensions.VoiceChat.Networking
 
         public void Release()
         {
-            //if (ArrayRented)
-            //    ByteAryPool.Return(Data);
+            if (ArrayRented)
+                ByteAryPool.Return(Data);
             Pool.Release(this);
         }
     }

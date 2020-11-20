@@ -175,12 +175,16 @@ namespace MultiplayerExtensions.VoiceChat.Networking
                 }
                 else
                     Plugin.Log?.Debug($"Received a Voip packet from {player.userId} ({player.userName}), but they weren't in the receiver dictionary.");
-                packet.Release();
+
             }
             catch (Exception ex)
             {
                 Plugin.Log?.Error($"Error handling VoipDataPacket: {ex.Message}");
                 Plugin.Log?.Debug(ex);
+            }
+            finally
+            {
+                packet.Release();
             }
         }
 

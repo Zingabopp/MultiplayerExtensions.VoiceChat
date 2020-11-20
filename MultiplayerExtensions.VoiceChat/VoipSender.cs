@@ -202,7 +202,7 @@ namespace MultiplayerExtensions.VoiceChat
                         VoipDataPacket frag = VoipDataPacket.Create(index, data, dataLength);
 
                         OnAudioGenerated?.Invoke(this, frag);
-                        ByteAryPool.Return(data);
+                        //ByteAryPool.Return(data);
                     }
                 }
                 length -= recordingBuffer.Length;

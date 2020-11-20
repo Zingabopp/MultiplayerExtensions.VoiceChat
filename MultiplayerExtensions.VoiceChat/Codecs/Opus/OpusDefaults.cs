@@ -3,8 +3,8 @@
     public static class OpusDefaults
     {
         public static readonly int SampleRate = 48000;
-        public static readonly int Channels = 2;
-        public static readonly int Bitrate = 64000;
-        public static readonly int FrameDuration = 5;
+        public static readonly int Channels = 1;
+        public static readonly int Bitrate = 24000;
+        public static readonly int FrameDuration = 20;
     }
 }

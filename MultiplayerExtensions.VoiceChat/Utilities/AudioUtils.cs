@@ -124,7 +124,6 @@ namespace MultiplayerExtensions.VoiceChat.Utilities
         {
             int minFreq;
             int maxFreq;
-
             Microphone.GetDeviceCaps(deviceName, out minFreq, out maxFreq);
 
             if (minFreq >= 12000)

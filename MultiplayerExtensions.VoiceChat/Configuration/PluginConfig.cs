@@ -39,15 +39,6 @@ namespace MultiplayerExtensions.VoiceChat.Configuration
         [JsonProperty(nameof(MicEnabled), Order = 30)]
         public virtual bool MicEnabled { get; set; } = true;
 
-        [SerializedName(nameof(PushToTalk))]
-        [JsonProperty(nameof(PushToTalk), Order = 40)]
-        public virtual bool PushToTalk { get; set; } = true;
-
-        [SerializedName(nameof(PushToTalkButton))]
-        [UseConverter(typeof(EnumConverter<PTTOption>))]
-        [JsonProperty(nameof(PushToTalkButton), Order = 50)]
-        public virtual PTTOption PushToTalkButton { get; set; } = PTTOption.LeftAndRightTrigger;
-
         [SerializedName(nameof(VoiceChatMicrophone))]
         [JsonProperty(nameof(VoiceChatMicrophone), Order = 60)]
         public string VoiceChatMicrophone { get; set; } = "";

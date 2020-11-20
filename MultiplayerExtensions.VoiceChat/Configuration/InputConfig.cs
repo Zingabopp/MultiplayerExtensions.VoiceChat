@@ -1,4 +1,5 @@
 ﻿using IPA.Config.Stores.Attributes;
+using IPA.Config.Stores.Converters;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -8,11 +9,19 @@ using System.Threading.Tasks;
 
 namespace MultiplayerExtensions.VoiceChat.Configuration
 {
-    internal class InputConfig
+    internal class InputConfig : IPTTConfig
     {
+        [SerializedName(nameof(PushToTalk))]
+        [JsonProperty(nameof(PushToTalk), Order = 0)]
+        public virtual bool PushToTalk { get; set; } = true;
+
+        [SerializedName(nameof(PushToTalkButton))]
+        [UseConverter(typeof(EnumConverter<PTTOption>))]
+        [JsonProperty(nameof(PushToTalkButton), Order = 10)]
+        public virtual PTTOption PushToTalkButton { get; set; } = PTTOption.LeftAndRightTrigger;
         private float triggerInputThreshold = 0.85f;
         [SerializedName(nameof(TriggerInputThreshold))]
-        [JsonProperty(nameof(TriggerInputThreshold), Order = 0)]
+        [JsonProperty(nameof(TriggerInputThreshold), Order = 60)]
         public virtual float TriggerInputThreshold
         {
             get => triggerInputThreshold;
@@ -29,7 +38,7 @@ namespace MultiplayerExtensions.VoiceChat.Configuration
 
         private float gripInputThreshold = 0.85f;
         [SerializedName(nameof(GripInputThreshold))]
-        [JsonProperty(nameof(GripInputThreshold), Order = 10)]
+        [JsonProperty(nameof(GripInputThreshold), Order = 70)]
         public virtual float GripInputThreshold
         {
             get => gripInputThreshold;
@@ -45,12 +54,12 @@ namespace MultiplayerExtensions.VoiceChat.Configuration
         }
 
         [SerializedName(nameof(EnableHaptics))]
-        [JsonProperty(nameof(EnableHaptics), Order = 15)]
+        [JsonProperty(nameof(EnableHaptics), Order = 80)]
         public virtual bool EnableHaptics { get; set; } = true;
 
         private float hapticAmplitude = 0.5f;
         [SerializedName(nameof(HapticAmplitude))]
-        [JsonProperty(nameof(HapticAmplitude), Order = 20)]
+        [JsonProperty(nameof(HapticAmplitude), Order = 90)]
         public virtual float HapticAmplitude
         {
             get => hapticAmplitude;
@@ -67,7 +76,7 @@ namespace MultiplayerExtensions.VoiceChat.Configuration
 
         private float hapticDuration = 0.1f;
         [SerializedName(nameof(HapticDuration))]
-        [JsonProperty(nameof(HapticDuration), Order = 30)]
+        [JsonProperty(nameof(HapticDuration), Order = 100)]
         public virtual float HapticDuration
         {
             get => hapticDuration;
@@ -81,6 +90,8 @@ namespace MultiplayerExtensions.VoiceChat.Configuration
                 hapticDuration = value;
             }
         }
+
+        public bool HapticsAvailable => true;
     }
 
     [Flags]

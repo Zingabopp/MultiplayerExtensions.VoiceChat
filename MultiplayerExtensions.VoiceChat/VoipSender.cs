@@ -1,6 +1,7 @@
-﻿using Concentus.Structs;
+﻿using MultiplayerExtensions.VoiceChat.Codecs;
 using MultiplayerExtensions.VoiceChat.Networking;
 using MultiplayerExtensions.VoiceChat.Utilities;
+using MultiplayerExtensions.VoiceChat.Utilities.Input;
 using System;
 using System.Linq;
 using UnityEngine;
@@ -18,7 +19,9 @@ namespace MultiplayerExtensions.VoiceChat
             internal set { _enabled = value; }
         }
 
-        private OpusEncoder? _encoder;
+        private IEncoder _encoder;
+        private ICodecFactory _codecFactory;
+        private IInputController _inputController;
 
         private AudioClip? recording;
         private float[]? recordingBuffer;
@@ -69,47 +72,47 @@ namespace MultiplayerExtensions.VoiceChat
                     else
                         _usedMicrophone = device;
                 }
-                
+
             }
         }
 
-        public VoipSender()
+        public VoipSender(ICodecFactory codecFactory, IEncoder encoder, IInputController inputController)
         {
             Plugin.Log?.Info("Created VoipSender");
+            _codecFactory = codecFactory;
+            _encoder = encoder;
+            _inputController = inputController;
             //StartRecording();
         }
 
         public void StartRecording()
         {
+            Plugin.Log?.Info("StartRecording()");
             if (Microphone.devices.Length == 0)
                 return;
             if ((_usedMicrophone?.Length ?? -1) == 0)
                 _usedMicrophone = null;
-            _encoder = GetEncoder(_usedMicrophone, 48000);
-            float ratio = inputFreq / (float)(_encoder.SampleRate); 
-            int sizeRequired = 960;
+            inputFreq = AudioUtils.GetFreqForMic(_usedMicrophone);
+            //float ratio = inputFreq / (float)(_encoder.SampleRate);
+            //if (_encoder == null || _encoder.SampleRate != inputFreq)
+            //    _encoder = _codecFactory.CreateEncoder(inputFreq, 1);
+            int sizeRequired = _encoder.FrameSize;
             recordingBuffer = new float[sizeRequired];
             if (recording != null)
                 GameObject.Destroy(recording);
-            recording = Microphone.Start(_usedMicrophone, true, 20, AudioUtils.GetFreqForMic(_usedMicrophone)); 
-            Plugin.Log?.Debug("Used microphone: " + (_usedMicrophone ?? "DEFAULT"));
-            Plugin.Log?.Debug("Used mic sample rate: " + inputFreq + "Hz");
-            Plugin.Log?.Debug("Used buffer size for recording: " + sizeRequired + " floats");
+            recording = Microphone.Start(_usedMicrophone, true, 20, AudioUtils.GetFreqForMic(_usedMicrophone));
+            Plugin.Log?.Debug($"Used microphone: {(_usedMicrophone ?? "DEFAULT")} | AudioClip channels: {recording.channels}");
+            Plugin.Log?.Debug($"Used mic sample rate: {inputFreq}Hz | Encoding SampleRate: {_encoder.SampleRate}Hz");
+            Plugin.Log?.Debug($"Used buffer size for recording: " + sizeRequired + " floats");
         }
 
-        protected OpusEncoder GetEncoder(string? deviceName, int sampleRate)
+        public void SetEncoder(IEncoder encoder)
         {
-            if (_encoder != null)
-            {
-                return _encoder;
-            }
-            inputFreq = AudioUtils.GetFreqForMic(deviceName);
-            _encoder = new OpusEncoder(sampleRate, 2, Concentus.Enums.OpusApplication.OPUS_APPLICATION_VOIP)
-            {
-                Bitrate = 128000,
-            };
-            return _encoder;
+            StopRecording();
+            _encoder = encoder ?? throw new ArgumentNullException(nameof(encoder));
+            StartRecording();
         }
+
         public void StopRecording()
         {
             Microphone.End(_usedMicrophone);
@@ -124,7 +127,19 @@ namespace MultiplayerExtensions.VoiceChat
                 return;
             if (recording == null)
                 return;
-            if (Input.GetKey(KeyCode.K))
+            //if (!_inputController.UsePushToTalk)
+            //{
+            //    // Test if talk should be enabled
+            //}
+            //else
+
+            if (!_inputController.UsePushToTalk || _inputController.TalkEnabled) // For now just always enable talk if PTT disabled
+            {
+                if (!IsListening && !_inputController.UsePushToTalk)
+                    _inputController.TriggerFeedback();
+                IsListening = true;
+            }
+            else if (Input.GetKey(KeyCode.K))
                 IsListening = true;
             else
                 IsListening = false;
@@ -148,12 +163,12 @@ namespace MultiplayerExtensions.VoiceChat
                         //{
                         //    AudioUtils.Resample(recordingBuffer, resampleBuffer, inputFreq, AudioUtils.GetFrequency(encoder.mode));
                         //}
-                        byte[] data = ByteAryPool.Rent(1275 * 2);
+                        byte[] data = ByteAryPool.Rent(1276);
                         //AudioUtils.Convert(recordingBuffer, pcmBytes);
-                        int dataLength = _encoder.Encode(recordingBuffer, 0, 480, data, 0, 1275);
+                        int dataLength = _encoder.Encode(recordingBuffer, 0, _encoder.FrameSize, data, 0, 1276);
                         if (dataLength == 0)
                             Plugin.Log?.Warn($"Why is DataLength 0?");
-                        VoipDataPacket frag = VoipDataPacket.Create("test", index, data, dataLength);
+                        VoipDataPacket frag = VoipDataPacket.Create(index, data, dataLength);
 
                         OnAudioGenerated?.Invoke(this, frag);
                         ByteAryPool.Return(data);
@@ -163,5 +178,6 @@ namespace MultiplayerExtensions.VoiceChat
                 lastPos += recordingBuffer.Length;
             }
         }
+
     }
 }

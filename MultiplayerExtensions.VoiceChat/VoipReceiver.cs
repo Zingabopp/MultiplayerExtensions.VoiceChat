@@ -10,7 +10,7 @@ using Zenject;
 
 namespace MultiplayerExtensions.VoiceChat
 {
-    public class VoipReceiver : MonoBehaviour
+    public class VoipReceiver : MonoBehaviour, IVoiceChatActivity
     {
         private const int _voipDelay = 1;
         private IDecoder Decoder = null!;
@@ -23,8 +23,35 @@ namespace MultiplayerExtensions.VoiceChat
         private int _voipDelayCounter;
         protected readonly System.Buffers.ArrayPool<float> FloatAryPool = System.Buffers.ArrayPool<float>.Shared;
 
-        public void Initialize(IDecoder decoder)
+        public IConnectedPlayer Player { get; private set; } = null!;
+
+        private bool _talking;
+        public bool Talking
         {
+            get { return _talking; }
+            set
+            {
+                if (_talking == value) return;
+                _talking = value;
+                TalkingStateChanged.RaiseEventSafe(this, value, nameof(TalkingStateChanged));
+            }
+        }
+
+        private bool _muted;
+        public bool Muted
+        {
+            get { return _talking; }
+            set
+            {
+                if (_talking == value) return;
+                _talking = value;
+                MutedStateChanged.RaiseEventSafe(this, value, nameof(MutedStateChanged));
+            }
+        }
+
+        public void Initialize(IConnectedPlayer player, IDecoder decoder)
+        {
+            Player = player;
             enabled = false;
             _voipFragQueue.Flush();
             _voipDelayCounter = 0;
@@ -132,7 +159,10 @@ namespace MultiplayerExtensions.VoiceChat
             if (!enabled)
                 Plugin.Log?.Warn($"Disabled, but still handling audio.");
             if (!_voipPlaying)
+            {
+                Talking = false; // TODO: Will this be too jerky if audio isn't available each frame?
                 return;
+            }
             //Plugin.Log?.Debug($"OnAudioFilterRead: {data.Length} | {channels} channels");
             int sampleRate = AudioSettings.outputSampleRate;
             int dataLen = data.Length / channels;
@@ -147,6 +177,7 @@ namespace MultiplayerExtensions.VoiceChat
             }
             int read = _voipFragQueue.Read(_voipBuffer, 0, bufferSize);
             AudioUtils.Resample(_voipBuffer, data, read, data.Length, 48000, sampleRate, channels);
+            Talking = true;
         }
 
         public void PlayVoIPFragment(float[] data, int dataLength, int fragIndex)
@@ -193,5 +224,7 @@ namespace MultiplayerExtensions.VoiceChat
         }
 
         public event EventHandler? Destroyed;
+        public event EventHandler<bool>? TalkingStateChanged;
+        public event EventHandler<bool>? MutedStateChanged;
     }
 }

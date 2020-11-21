@@ -124,19 +124,19 @@ namespace MultiplayerExtensions.VoiceChat.Networking
             }
         }
 
-        private VoipReceiver GetVoipReceiverForId(string userId)
+        private VoipReceiver GetVoipReceiverForId(IConnectedPlayer player)
         {
             VoipReceiver receiver = PlayerReceivers.GetOrAdd(userId, CreatePlayerVoipReceiver);
             BindReceiver(receiver);
             return receiver;
         }
 
-        private VoipReceiver CreatePlayerVoipReceiver(string userId)
+        private VoipReceiver CreatePlayerVoipReceiver(IConnectedPlayer player)
         {
-            Plugin.Log?.Info($"CreatePlayerVoipReceiver: {userId}");
-            VoipReceiver voipReceiver = _container.InstantiateComponentOnNewGameObject<VoipReceiver>($"VoipReceiver_{userId}");
+            Plugin.Log?.Info($"CreatePlayerVoipReceiver: {player.userId}");
+            VoipReceiver voipReceiver = _container.InstantiateComponentOnNewGameObject<VoipReceiver>($"VoipReceiver_{player.userId}");
             // TODO: Initialize after receiving codec information from sender.
-            voipReceiver.Initialize(CodecFactory.CreateDecoder(Codecs.Opus.OpusDefaults.CodecId));
+            voipReceiver.Initialize(player, CodecFactory.CreateDecoder(Codecs.Opus.OpusDefaults.CodecId));
             return voipReceiver;
         }
 

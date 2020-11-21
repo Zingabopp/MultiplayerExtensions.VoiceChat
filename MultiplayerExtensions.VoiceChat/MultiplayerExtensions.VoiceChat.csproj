@@ -38,6 +38,15 @@
     <DisableZipRelease>True</DisableZipRelease>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Assets\PlayerMuted.png" />
+    <None Remove="Assets\SelfMute.png" />
+    <None Remove="Assets\Talking.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>H:\SteamApps\steamapps\common\Beat Saber\Libs\0Harmony.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="BGNet">
       <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\BGNet.dll</HintPath>
       <Private>true</Private>
@@ -100,6 +109,10 @@
       <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
       <Private>true</Private>
     </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
       <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
       <Private>False</Private>
@@ -138,6 +151,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Assets\PlayerMuted.png" />
+    <EmbeddedResource Include="Assets\SelfMute.png" />
+    <EmbeddedResource Include="Assets\Talking.png" />
     <EmbeddedResource Include="manifest.json" />
   </ItemGroup>
   <ItemGroup>
@@ -157,9 +173,6 @@
     <PackageReference Include="System.Buffers" Version="4.5.1" />
     <PackageReference Include="System.Runtime" Version="4.3.1" />
     <PackageReference Include="System.Runtime.Extensions" Version="4.3.1" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="HarmonyPatches\" />
   </ItemGroup>
   <Target Name="PreBuild" BeforeTargets="BeforeBuild" Condition="'$(NCRUNCH)' != '1'">
     <Error Text="The BeatSaberModdingTools.Tasks nuget package doesn't seem to be installed." Condition="'$(BSMTTaskAssembly)' == ''" />

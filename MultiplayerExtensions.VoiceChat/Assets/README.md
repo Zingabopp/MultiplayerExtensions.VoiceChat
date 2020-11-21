@@ -1,0 +1,1 @@
+﻿Icons from [Google Material Design](https://material.io/resources/icons/) repository.

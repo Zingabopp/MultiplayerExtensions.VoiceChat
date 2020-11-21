@@ -11,7 +11,7 @@ namespace MultiplayerExtensions.VoiceChat.Codecs.Opus
         protected readonly Concentus.Structs.OpusEncoder Encoder;
         private static readonly int[] _validFrameDurations = new int[] { 5, 10, 20, 40, 60 };
         private readonly OpusSettings _settings = new OpusSettings();
-        public string CodecId => "Opus";
+        public string CodecId => OpusDefaults.CodecId;
         public int SampleRate { get => _settings.SampleRate; protected set => _settings.SampleRate = value; }
         public int Channels { get => _settings.Channels; protected set => _settings.Channels = value; }
         public int Bitrate { get => _settings.Bitrate; protected set => _settings.Bitrate = value; }
@@ -30,6 +30,24 @@ namespace MultiplayerExtensions.VoiceChat.Codecs.Opus
             Encoder = new Concentus.Structs.OpusEncoder(sampleRate, numChannels, Concentus.Enums.OpusApplication.OPUS_APPLICATION_VOIP)
             {
                 Bitrate = bitrate
+            };
+        }
+
+        public OpusEncoder(OpusSettings s)
+            : this(s.SampleRate, s.Channels, s.FrameDuration, s.Bitrate)
+        { }
+        public OpusEncoder(ICodecSettings s)
+        {
+            SampleRate = s.SampleRate;
+            Channels = s.Channels;
+            OpusSettings? settings = s as OpusSettings;
+            Bitrate = settings?.Bitrate ?? OpusDefaults.Bitrate;
+            FrameDuration = settings?.FrameDuration ?? OpusDefaults.FrameDuration;
+            if (!_validFrameDurations.Contains(FrameDuration))
+                throw new ArgumentException($"Invalid frame duration in settings: must be a value in {{ {string.Join(", ", _validFrameDurations)} }}", nameof(s));
+            Encoder = new Concentus.Structs.OpusEncoder(SampleRate, Channels, Concentus.Enums.OpusApplication.OPUS_APPLICATION_VOIP)
+            {
+                Bitrate = Bitrate
             };
         }
 

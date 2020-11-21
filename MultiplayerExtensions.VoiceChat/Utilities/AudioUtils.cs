@@ -54,17 +54,76 @@ namespace MultiplayerExtensions.VoiceChat.Utilities
             WaveInDevice device = waveInDevices.FirstOrDefault(w => mmDevice.FriendlyName.StartsWith(w.Name));
             return device;
         }
-        public static void ApplyGain(float[] samples, float gain)
+        /// <summary>
+        /// Multiplies each sample by a given gain value.
+        /// </summary>
+        /// <param name="samples"></param>
+        /// <param name="offset"></param>
+        /// <param name="length"></param>
+        /// <param name="gain">% gain</param>
+        public static ClipStats ApplyGain(float[] samples, int offset, int length, float gain)
         {
-            for (int i = 0; i < samples.Length; i++)
+            float min = float.MaxValue;
+            float max = float.MinValue;
+            float sum = 0;
+            if ((offset + length) > (samples?.Length ?? throw new ArgumentNullException(nameof(samples))))
             {
-                samples[i] *= gain;
+                throw new ArgumentException($"Offset '{offset}' and length '{length}' are outside the bounds of samples ({samples.Length})");
             }
+            for (int i = offset; i < length; i++)
+            {
+                float sample = samples[i] * gain;
+                samples[i] = sample;
+                sum += sample;
+                if (sample > max)
+                    max = sample;
+                if (sample < min)
+                    min = sample;
+
+            }
+            return new ClipStats(min, max, sum / length);
+        }
+
+        /// <summary>
+        /// Multiplies each sample by a given gain value.
+        /// </summary>
+        /// <param name="samples"></param>
+        /// <param name="gain">% gain</param>
+        public static ClipStats ApplyGain(float[] samples, float gain)
+        {
+            return ApplyGain(samples, 0, samples?.Length ?? throw new ArgumentNullException(nameof(samples)), gain);
+        }
+
+        public struct ClipStats
+        {
+            public ClipStats(float min, float max, float average)
+            {
+                MinAmplitude = min;
+                MaxAmplitude = max;
+                AverageAmplitude = average;
+            }
+            public float MinAmplitude;
+            public float MaxAmplitude;
+            public float AverageAmplitude;
         }
 
         public static float GetMaxAmplitude(float[] samples)
         {
-            return samples.Max();
+            return GetMaxAmplitude(samples, 0, samples.Length);
+        }
+        public static float GetMaxAmplitude(float[] samples, int offset, int length)
+        {
+            if ((offset + length) > (samples?.Length ?? throw new ArgumentNullException(nameof(samples))))
+            {
+                throw new ArgumentException($"Offset '{offset}' and length '{length}' are outside the bounds of samples ({samples.Length})");
+            }
+            float maxAmplitude = -1;
+            for (int i = offset; i < length; i++)
+            {
+                if (samples[i] > maxAmplitude)
+                    maxAmplitude = samples[i];
+            }
+            return maxAmplitude;
         }
 
         public static int GetFrequency(BandMode mode)
@@ -80,21 +139,28 @@ namespace MultiplayerExtensions.VoiceChat.Utilities
             };
         }
 
-        public static void Resample(float[] source, float[] target, int inputSampleRate, int outputSampleRate, int outputChannelsNum = 1)
+        public static float Resample(float[] source, float[] target, int inputSampleRate, int outputSampleRate, int outputChannelsNum = 1)
         {
-            Resample(source, target, source.Length, target.Length, inputSampleRate, outputSampleRate, outputChannelsNum);
+            return Resample(source, target, source.Length, target.Length, inputSampleRate, outputSampleRate, outputChannelsNum);
         }
 
-        public static void Resample(float[] source, float[] target, int inputNum, int outputNum, int inputSampleRate, int outputSampleRate, int outputChannelsNum)
+        public static float Resample(float[] source, float[] target, int inputNum, int outputNum, int inputSampleRate, int outputSampleRate, int outputChannelsNum)
         {
             float ratio = inputSampleRate / (float)outputSampleRate;
+            float maxAmplitude = -1;
             if (ratio % 1f <= float.Epsilon)
             {
                 int intRatio = Mathf.RoundToInt(ratio);
                 for (int i = 0; i < (outputNum / outputChannelsNum) && (i * intRatio) < inputNum; i++)
                 {
                     for (int j = 0; j < outputChannelsNum; j++)
-                        target[i * outputChannelsNum + j] = source[i * intRatio];
+                    {
+                        int targetIndex = i * outputChannelsNum + j;
+                        float sourceSample = source[i * intRatio];
+                        if (sourceSample > maxAmplitude)
+                            maxAmplitude = sourceSample;
+                        target[targetIndex] = sourceSample;
+                    }
                 }
             }
             else
@@ -104,7 +170,13 @@ namespace MultiplayerExtensions.VoiceChat.Utilities
                     for (int i = 0; i < (outputNum / outputChannelsNum) && Mathf.CeilToInt(i * ratio) < inputNum; i++)
                     {
                         for (int j = 0; j < outputChannelsNum; j++)
-                            target[i * outputChannelsNum + j] = Mathf.Lerp(source[Mathf.FloorToInt(i * ratio)], source[Mathf.CeilToInt(i * ratio)], ratio % 1);
+                        {
+                            int targetIndex = i * outputChannelsNum + j;
+                            float sourceSample = Mathf.Lerp(source[Mathf.FloorToInt(i * ratio)], source[Mathf.CeilToInt(i * ratio)], ratio % 1);
+                            if (sourceSample > maxAmplitude)
+                                maxAmplitude = sourceSample;
+                            target[targetIndex] = sourceSample;
+                        }
                     }
                 }
                 else
@@ -113,11 +185,16 @@ namespace MultiplayerExtensions.VoiceChat.Utilities
                     {
                         for (int j = 0; j < outputChannelsNum; j++)
                         {
-                            target[i * outputChannelsNum + j] = source[Mathf.FloorToInt(i * ratio)];
+                            int targetIndex = i * outputChannelsNum + j;
+                            float sourceSample = source[Mathf.FloorToInt(i * ratio)];
+                            if (sourceSample > maxAmplitude)
+                                maxAmplitude = sourceSample;
+                            target[targetIndex] = sourceSample; ;
                         }
                     }
                 }
             }
+            return maxAmplitude;
         }
 
         public static int GetFreqForMic(string? deviceName = null)

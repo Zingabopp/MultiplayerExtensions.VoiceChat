@@ -1,7 +1,6 @@
 ﻿using MultiplayerExtensions.VoiceChat.Codecs;
 using System;
 using System.Collections.Concurrent;
-using System.Threading.Tasks;
 using UnityEngine;
 using Zenject;
 
@@ -54,7 +53,7 @@ namespace MultiplayerExtensions.VoiceChat.Networking
 #if DEBUG
             dummyReceiver = container.InstantiateComponentOnNewGameObject<VoipReceiver>();
             var settings = new Codecs.Opus.OpusSettings() { SampleRate = 48000, Channels = 1 };
-            dummyReceiver.Initialize(codecFactory, settings);
+            dummyReceiver.Initialize(codecFactory.CreateDecoder(Codecs.Opus.OpusDefaults.CodecId, settings));
             voipSender.OnAudioGenerated += (s, e) => { dummyReceiver.HandleAudioDataReceived(s, e); };
 #endif
             AddEvents();
@@ -136,7 +135,8 @@ namespace MultiplayerExtensions.VoiceChat.Networking
         {
             Plugin.Log?.Info($"CreatePlayerVoipReceiver: {userId}");
             VoipReceiver voipReceiver = _container.InstantiateComponentOnNewGameObject<VoipReceiver>($"VoipReceiver_{userId}");
-            voipReceiver.Initialize(CodecFactory, CodecFactory.DefaultSettings);
+            // TODO: Initialize after receiving codec information from sender.
+            voipReceiver.Initialize(CodecFactory.CreateDecoder(Codecs.Opus.OpusDefaults.CodecId));
             return voipReceiver;
         }
 

@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MultiplayerExtensions.VoiceChat.Configuration
 {
@@ -12,6 +8,7 @@ namespace MultiplayerExtensions.VoiceChat.Configuration
         bool SpatialAudio { get; }
         bool MicEnabled { get; }
         string VoiceChatMicrophone { get; }
+        int MicGain { get; }
         int VoiceChatGain { get; }
 
         event EventHandler<int>? VoiceChatGainChanged;

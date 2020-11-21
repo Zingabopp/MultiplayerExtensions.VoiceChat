@@ -11,6 +11,7 @@ namespace MultiplayerExtensions.VoiceChat.Configuration
     internal class PluginConfig : IVoiceSettings
     {
         private int voiceChatGain = 0;
+        private int micGain = 0;
         private string voiceChatMicrophone = "";
         private bool micEnabled = true;
         private bool spatialAudio = false;
@@ -18,7 +19,21 @@ namespace MultiplayerExtensions.VoiceChat.Configuration
         [SerializedName(nameof(EnableVoiceChat))]
         [JsonProperty(nameof(EnableVoiceChat), Order = 0)]
         public virtual bool EnableVoiceChat { get; set; }
-
+        [SerializedName(nameof(MicGain))]
+        [JsonProperty(nameof(MicGain), Order = 5)]
+        public virtual int MicGain
+        {
+            get => voiceChatGain;
+            set
+            {
+                value = Math.Min(value, 100);
+                value = Math.Max(value, -50);
+                if (micGain == value)
+                    return;
+                micGain = value;
+                RaiseVoiceSettingChanged();
+            }
+        }
         [SerializedName(nameof(VoiceChatGain))]
         [JsonProperty(nameof(VoiceChatGain), Order = 10)]
         public virtual int VoiceChatGain
@@ -83,6 +98,9 @@ namespace MultiplayerExtensions.VoiceChat.Configuration
 
         private void RaiseVoiceSettingChanged([CallerMemberName] string? setting = null)
         {
+#if DEBUG
+            Plugin.Log?.Debug($"IVoiceSettings.{setting ?? "*"} changed.");
+#endif
             VoiceSettingChanged?.Invoke(this, setting);
         }
 

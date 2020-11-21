@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 
 namespace MultiplayerExtensions.VoiceChat.Codecs.Opus
 {
-    public class OpusDecoder : IDecoder
+    public class OpusDecoder : IDecoder, IDecoderWithGain
     {
         private const int MaxGain = 7000;
         protected readonly Concentus.Structs.OpusDecoder Decoder;
         private readonly OpusSettings _settings = new OpusSettings();
 
-        public string CodecId => "Opus";
+        public string CodecId => OpusDefaults.CodecId;
 
         public int SampleRate { get => _settings.SampleRate; protected set => _settings.SampleRate = value; }
         public int Channels { get => _settings.Channels; protected set => _settings.Channels = value; }
@@ -33,6 +33,9 @@ namespace MultiplayerExtensions.VoiceChat.Codecs.Opus
             Decoder = new Concentus.Structs.OpusDecoder(sampleRate, numChannels);
             Decoder.Gain = 50;
         }
+        public OpusDecoder(ICodecSettings s)
+            : this(s.SampleRate, s.Channels)
+        { }
 
         public bool SettingsMatch(ICodecSettings other)
         {

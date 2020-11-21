@@ -23,13 +23,13 @@ namespace MultiplayerExtensions.VoiceChat
         private int _voipDelayCounter;
         protected readonly System.Buffers.ArrayPool<float> FloatAryPool = System.Buffers.ArrayPool<float>.Shared;
 
-        public void Initialize(ICodecFactory codecFactory, ICodecSettings codecSettings)
+        public void Initialize(IDecoder decoder)
         {
             enabled = false;
             _voipFragQueue.Flush();
             _voipDelayCounter = 0;
-            Decoder = codecFactory.CreateDecoder(codecSettings);
-            Plugin.Log?.Debug($"{name} initialized at {codecSettings.Channels}x{codecSettings.SampleRate}Hz");
+            Decoder = decoder;
+            Plugin.Log?.Debug($"{name} initialized at {decoder.Channels}x{decoder.SampleRate}Hz");
             enabled = true;
         }
 
@@ -83,15 +83,15 @@ namespace MultiplayerExtensions.VoiceChat
         {
             if (Input.GetKeyDown(KeyCode.KeypadPlus))
             {
-                if (Decoder is OpusDecoder opus)
+                if (Decoder is IDecoderWithGain decoderWithGain)
                 {
-                    if (opus.Gain < 100)
+                    if (decoderWithGain.Gain < 100)
                     {
-                        opus.Gain += 5;
-                        Plugin.Log?.Info($"Decoder gain = {opus.Gain}");
+                        decoderWithGain.Gain += 5;
+                        Plugin.Log?.Info($"Decoder gain = {decoderWithGain.Gain}");
                     }
                     else
-                        Plugin.Log?.Warn($"Max gain reached ({opus.Gain})");
+                        Plugin.Log?.Warn($"Max gain reached ({decoderWithGain.Gain})");
                 }
                 else
                     Plugin.Log?.Warn("No gain support");

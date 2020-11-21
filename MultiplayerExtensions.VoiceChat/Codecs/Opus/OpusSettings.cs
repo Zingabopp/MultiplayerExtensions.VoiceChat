@@ -32,7 +32,7 @@ namespace MultiplayerExtensions.VoiceChat.Codecs.Opus
             FrameDuration = OpusDefaults.FrameDuration;
         }
 
-        public string CodecId => "Opus";
+        public string CodecId => OpusDefaults.CodecId;
 
         public int SampleRate { get; set; }
         public int Channels { get; set; }
@@ -48,8 +48,6 @@ namespace MultiplayerExtensions.VoiceChat.Codecs.Opus
             Bitrate = Bitrate,
             FrameDuration = FrameDuration
         };
-
-
         ICodecSettings ICodecSettings.Clone() => Clone();
 
         public override bool Equals(object? obj)

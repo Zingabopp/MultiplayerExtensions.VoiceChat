@@ -40,11 +40,11 @@ namespace MultiplayerExtensions.VoiceChat
         private bool _muted;
         public bool Muted
         {
-            get { return _talking; }
+            get { return _muted; }
             set
             {
-                if (_talking == value) return;
-                _talking = value;
+                if (_muted == value) return;
+                _muted = value;
                 MutedStateChanged.RaiseEventSafe(this, value, nameof(MutedStateChanged));
             }
         }

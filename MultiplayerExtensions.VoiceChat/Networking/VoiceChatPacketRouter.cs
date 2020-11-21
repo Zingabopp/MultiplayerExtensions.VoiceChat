@@ -53,7 +53,7 @@ namespace MultiplayerExtensions.VoiceChat.Networking
 #if DEBUG
             dummyReceiver = container.InstantiateComponentOnNewGameObject<VoipReceiver>();
             var settings = new Codecs.Opus.OpusSettings() { SampleRate = 48000, Channels = 1 };
-            dummyReceiver.Initialize(codecFactory.CreateDecoder(Codecs.Opus.OpusDefaults.CodecId, settings));
+            dummyReceiver.Initialize(sessionManager.localPlayer, codecFactory.CreateDecoder(Codecs.Opus.OpusDefaults.CodecId, settings));
             voipSender.OnAudioGenerated += (s, e) => { dummyReceiver.HandleAudioDataReceived(s, e); };
 #endif
             AddEvents();
@@ -66,7 +66,7 @@ namespace MultiplayerExtensions.VoiceChat.Networking
             foreach (IConnectedPlayer? player in sessionManager.connectedPlayers)
             {
                 if (!player.isMe)
-                    CreatePlayerVoipReceiver(player.userId);
+                    CreatePlayerVoipReceiver(player.userId, player);
             }
             //if (sessionManager.isConnected)
                 IsConnected = true;
@@ -113,27 +113,32 @@ namespace MultiplayerExtensions.VoiceChat.Networking
 
         private void OnPlayerConnected(IConnectedPlayer player)
         {
+            // TODO: Send VoiceChat info request packet here, create VoipReceiver on response.
             string userId = player.userId;
 
             if (IPA.Utilities.UnityGame.OnMainThread)
-                GetVoipReceiverForId(userId);
+                GetVoipReceiverForId(player);
             else
             {
                 Plugin.Log?.Debug($"Invoke required for OnPlayerConnected");
-                HMMainThreadDispatcher.instance.Enqueue(() => GetVoipReceiverForId(userId));
+                HMMainThreadDispatcher.instance.Enqueue(() => GetVoipReceiverForId(player));
             }
         }
 
         private VoipReceiver GetVoipReceiverForId(IConnectedPlayer player)
         {
-            VoipReceiver receiver = PlayerReceivers.GetOrAdd(userId, CreatePlayerVoipReceiver);
-            BindReceiver(receiver);
+            VoipReceiver receiver = PlayerReceivers.GetOrAdd(player.userId, CreatePlayerVoipReceiver, player);
             return receiver;
         }
 
-        private VoipReceiver CreatePlayerVoipReceiver(IConnectedPlayer player)
+        private VoipReceiver CreatePlayerVoipReceiver(string userId, IConnectedPlayer player)
         {
             Plugin.Log?.Info($"CreatePlayerVoipReceiver: {player.userId}");
+            if(userId != player.userId)
+            {
+                Plugin.Log?.Warn($"Creating VoipReceiver for {player.userId}, but provided userId doesn't match.");
+                userId = player.userId;
+            }
             VoipReceiver voipReceiver = _container.InstantiateComponentOnNewGameObject<VoipReceiver>($"VoipReceiver_{player.userId}");
             // TODO: Initialize after receiving codec information from sender.
             voipReceiver.Initialize(player, CodecFactory.CreateDecoder(Codecs.Opus.OpusDefaults.CodecId));

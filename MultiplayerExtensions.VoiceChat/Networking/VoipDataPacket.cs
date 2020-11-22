@@ -6,7 +6,8 @@ namespace MultiplayerExtensions.VoiceChat.Networking
     public class VoipDataPacket : INetSerializable, IPoolablePacket, IVoipPacket
     {
         protected readonly System.Buffers.ArrayPool<byte> ByteAryPool = System.Buffers.ArrayPool<byte>.Shared;
-        //public string? PlayerId;
+        protected byte _packetVersion;
+        public byte PacketVersion { get => _packetVersion; }
         public int DataLength;
         public byte[]? Data;
         public int Index;
@@ -27,6 +28,7 @@ namespace MultiplayerExtensions.VoiceChat.Networking
             VoipDataPacket packet = Pool.Obtain();
             packet.ArrayRented = false;
             //packet.PlayerId = playerId;
+            packet._packetVersion = 1;
             packet.Index = index;
             packet.Checksum = 0;
             packet.Data = data;
@@ -40,6 +42,7 @@ namespace MultiplayerExtensions.VoiceChat.Networking
         {
             ArrayRented = true;
             //PlayerId = reader.GetString();
+            _packetVersion = reader.GetByte();
             Index = reader.GetInt();
             Checksum = reader.GetInt();
             DataLength = reader.GetInt();
@@ -61,6 +64,7 @@ namespace MultiplayerExtensions.VoiceChat.Networking
         public void Serialize(NetDataWriter writer)
         {
             //writer.Put(PlayerId);
+            writer.Put(_packetVersion);
             writer.Put(Index);
             int checksum = GetChecksum(Data, DataLength);
             writer.Put(checksum);

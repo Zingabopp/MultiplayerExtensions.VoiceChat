@@ -45,15 +45,26 @@ namespace MultiplayerExtensions.VoiceChat.Networking
         public void Deserialize(NetDataReader reader)
         {
             _packetVersion = reader.GetByte();
-            PreferredCodec = reader.GetString();
-            SupportedCodecs = reader.GetStringArray();
+            PreferredCodec = Encoding.UTF8.GetString(reader.GetBytesWithLength());
+            byte numCodecs = reader.GetByte();
+            SupportedCodecs = new string[numCodecs];
+            for(int i = 0; i < numCodecs; i++)
+            {
+                SupportedCodecs[i] = Encoding.UTF8.GetString(reader.GetBytesWithLength());
+            }
         }
 
         public void Serialize(NetDataWriter writer)
         {
             writer.Put(_packetVersion);
-            writer.Put(PreferredCodec);
-            writer.PutArray(SupportedCodecs);
+            // length int inserted
+            writer.PutBytesWithLength(Encoding.UTF8.GetBytes(PreferredCodec));
+            writer.Put((byte)SupportedCodecs.Length);
+            for(int i =0; i < SupportedCodecs.Length; i++)
+            {
+                // length int inserted
+                writer.PutBytesWithLength(Encoding.UTF8.GetBytes(SupportedCodecs[i]));
+            }
         }
 
         public void Release()

@@ -53,7 +53,7 @@ namespace MultiplayerExtensions.VoiceChat.Networking
             _packetVersion = reader.GetByte();
             SampleRate = reader.GetInt();
             Channels = reader.GetByte();
-            Codec = reader.GetString();
+            Codec = Encoding.UTF8.GetString(reader.GetBytesWithLength());
         }
 
         public void Serialize(NetDataWriter writer)
@@ -61,7 +61,7 @@ namespace MultiplayerExtensions.VoiceChat.Networking
             writer.Put(_packetVersion);
             writer.Put(SampleRate);
             writer.Put(Channels);
-            writer.Put(Codec);
+            writer.PutBytesWithLength(Encoding.UTF8.GetBytes(Codec));
         }
 
         public void Release()

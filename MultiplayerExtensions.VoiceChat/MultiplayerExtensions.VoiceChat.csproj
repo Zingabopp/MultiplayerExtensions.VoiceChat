@@ -41,6 +41,7 @@
     <None Remove="Assets\PlayerMuted.png" />
     <None Remove="Assets\SelfMute.png" />
     <None Remove="Assets\Talking.png" />
+    <None Remove="Assets\VoiceEnabled.png" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="0Harmony">
@@ -154,6 +155,7 @@
     <EmbeddedResource Include="Assets\PlayerMuted.png" />
     <EmbeddedResource Include="Assets\SelfMute.png" />
     <EmbeddedResource Include="Assets\Talking.png" />
+    <EmbeddedResource Include="Assets\VoiceEnabled.png" />
     <EmbeddedResource Include="manifest.json" />
   </ItemGroup>
   <ItemGroup>

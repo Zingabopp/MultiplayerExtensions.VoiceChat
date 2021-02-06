@@ -38,9 +38,11 @@
     <DisableZipRelease>True</DisableZipRelease>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Assets\MicEnabled.png" />
     <None Remove="Assets\PlayerMuted.png" />
-    <None Remove="Assets\SelfMute.png" />
-    <None Remove="Assets\Talking.png" />
+    <None Remove="Assets\PlayerTalking.png" />
+    <None Remove="Assets\SelfMuted.png" />
+    <None Remove="Assets\SelfTalking.png" />
     <None Remove="Assets\VoiceEnabled.png" />
   </ItemGroup>
   <ItemGroup>
@@ -152,9 +154,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Assets\MicEnabled.png" />
     <EmbeddedResource Include="Assets\PlayerMuted.png" />
-    <EmbeddedResource Include="Assets\SelfMute.png" />
-    <EmbeddedResource Include="Assets\Talking.png" />
+    <EmbeddedResource Include="Assets\SelfMuted.png" />
+    <EmbeddedResource Include="Assets\PlayerTalking.png" />
+    <EmbeddedResource Include="Assets\SelfTalking.png" />
     <EmbeddedResource Include="Assets\VoiceEnabled.png" />
     <EmbeddedResource Include="manifest.json" />
   </ItemGroup>

@@ -10,8 +10,12 @@ using Zenject;
 
 namespace MultiplayerExtensions.VoiceChat
 {
-    public class VoipReceiver : MonoBehaviour
+    public class VoipReceiver : MonoBehaviour, IVoiceChatActivity
     {
+        public event EventHandler? Destroyed;
+        public event EventHandler<bool>? TalkingStateChanged;
+        public event EventHandler<bool>? MutedStateChanged;
+
         private const int _voipDelay = 1;
         private IDecoder Decoder = null!;
         protected AudioSource? voipSource;
@@ -23,8 +27,35 @@ namespace MultiplayerExtensions.VoiceChat
         private int _voipDelayCounter;
         protected readonly System.Buffers.ArrayPool<float> FloatAryPool = System.Buffers.ArrayPool<float>.Shared;
 
-        public void Initialize(IDecoder decoder)
+        public IConnectedPlayer Player { get; private set; } = null!;
+
+        private bool _talking;
+        public bool Talking
         {
+            get { return _talking; }
+            set
+            {
+                if (_talking == value) return;
+                _talking = value;
+                TalkingStateChanged.RaiseEventSafe(this, value, nameof(TalkingStateChanged));
+            }
+        }
+
+        private bool _muted;
+        public bool Muted
+        {
+            get { return _muted; }
+            set
+            {
+                if (_muted == value) return;
+                _muted = value;
+                MutedStateChanged.RaiseEventSafe(this, value, nameof(MutedStateChanged));
+            }
+        }
+
+        public void Initialize(IConnectedPlayer player, IDecoder decoder)
+        {
+            Player = player;
             enabled = false;
             _voipFragQueue.Flush();
             _voipDelayCounter = 0;
@@ -40,23 +71,42 @@ namespace MultiplayerExtensions.VoiceChat
             return Decoder.CodecId == decoderId && Decoder.SettingsMatch(codecSettings);
         }
 
-        protected void Start()
+        public void PlayVoIPFragment(float[] data, int dataLength, int fragIndex)
         {
-            Plugin.Log?.Critical($"VoipReceiver Started");
-            voipSource = gameObject.AddComponent<AudioSource>();
-            voipSource.clip = null;
-            voipSource.spatialize = false;
-            //voipSource.bypassEffects = true;
-            //voipSource.bypassListenerEffects = true;
-            //voipSource.bypassReverbZones = true;
-            voipSource.loop = true;
-            voipSource.volume = 1f;
-            voipSource.Play();
-            //thing.Decode(null, 0, 0,)
-            //if (voipSender != null)
-            //    voipSender.OnAudioGenerated += HandleAudioDataReceived;
-            //else
-            //    Plugin.Log?.Error("No VoipSender available.");
+            if (voipSource != null)// && !InGameOnlineController.Instance.mutedPlayers.Contains(playerInfo.playerId))
+            {
+                if ((_lastVoipFragIndex + 1) != fragIndex || _silentFrames > 15)
+                {
+#if DEBUG
+                    Plugin.Log?.Info($"Starting from scratch! ((_lastVoipFragIndex + 1) != fragIndex): {(_lastVoipFragIndex + 1) != fragIndex}, (_silentFrames > 20): {_silentFrames > 20}, _lastVoipFragIndex: {_lastVoipFragIndex}, fragIndex: {fragIndex}");
+#endif
+                    _voipFragQueue.Flush();
+                    _voipDelayCounter = 0;
+                }
+                else
+                {
+#if DEBUG && VERBOSE
+                    Plugin.Log?.Info($"New data ({data.Length}) at pos {_voipFrames} while playing at {voipSource.timeSamples}, Overlap: {voipSource.timeSamples > _voipFrames && !(voipSource.timeSamples > _voipClip.samples/2 && _voipFrames < _voipClip.samples / 2)}, Delay: {_voipFrames - voipSource.timeSamples}, Speed: {voipSource.timeSamples - lastPlayPos}, Frames: {Time.frameCount - lastFrame}");
+
+                    lastPlayPos = voipSource.timeSamples;
+                    lastFrame = Time.frameCount;
+#endif
+                    _voipDelayCounter++;
+
+                    if (!_voipPlaying && _voipDelayCounter >= _voipDelay)
+                    {
+                        _voipPlaying = true;
+                    }
+                }
+
+                _lastVoipFragIndex = fragIndex;
+                _silentFrames = 0;
+                //if (Config.Instance.VoiceChatSettings.VoiceChatVolume > 1)
+                //{
+                //    AudioUtils.ApplyGain(data, Config.Instance.VoiceChatSettings.VoiceChatVolume);
+                //}
+                _voipFragQueue.Write(data, 0, dataLength);
+            }
         }
 
         public void HandleAudioDataReceived(object sender, VoipDataPacket e)
@@ -77,6 +127,26 @@ namespace MultiplayerExtensions.VoiceChat
             }
             else
                 Plugin.Log?.Warn($"HandleAudioDataReceived {(e.Data == null ? "Data was null" : $"DataLength: {e.DataLength}")}");
+        }
+
+        #region Monobehaviour Messages
+        protected void Start()
+        {
+            Plugin.Log?.Critical($"VoipReceiver Started");
+            voipSource = gameObject.AddComponent<AudioSource>();
+            voipSource.clip = null;
+            voipSource.spatialize = false;
+            //voipSource.bypassEffects = true;
+            //voipSource.bypassListenerEffects = true;
+            //voipSource.bypassReverbZones = true;
+            voipSource.loop = true;
+            voipSource.volume = 1f;
+            voipSource.Play();
+            //thing.Decode(null, 0, 0,)
+            //if (voipSender != null)
+            //    voipSender.OnAudioGenerated += HandleAudioDataReceived;
+            //else
+            //    Plugin.Log?.Error("No VoipSender available.");
         }
 
         protected void Update()
@@ -132,7 +202,10 @@ namespace MultiplayerExtensions.VoiceChat
             if (!enabled)
                 Plugin.Log?.Warn($"Disabled, but still handling audio.");
             if (!_voipPlaying)
+            {
+                Talking = false; // TODO: Will this be too jerky if audio isn't available each frame?
                 return;
+            }
             //Plugin.Log?.Debug($"OnAudioFilterRead: {data.Length} | {channels} channels");
             int sampleRate = AudioSettings.outputSampleRate;
             int dataLen = data.Length / channels;
@@ -147,51 +220,14 @@ namespace MultiplayerExtensions.VoiceChat
             }
             int read = _voipFragQueue.Read(_voipBuffer, 0, bufferSize);
             AudioUtils.Resample(_voipBuffer, data, read, data.Length, 48000, sampleRate, channels);
+            Talking = true;
         }
 
-        public void PlayVoIPFragment(float[] data, int dataLength, int fragIndex)
-        {
-            if (voipSource != null)// && !InGameOnlineController.Instance.mutedPlayers.Contains(playerInfo.playerId))
-            {
-                if ((_lastVoipFragIndex + 1) != fragIndex || _silentFrames > 15)
-                {
-#if DEBUG
-                    Plugin.Log?.Info($"Starting from scratch! ((_lastVoipFragIndex + 1) != fragIndex): {(_lastVoipFragIndex + 1) != fragIndex}, (_silentFrames > 20): {_silentFrames > 20}, _lastVoipFragIndex: {_lastVoipFragIndex}, fragIndex: {fragIndex}");
-#endif
-                    _voipFragQueue.Flush();
-                    _voipDelayCounter = 0;
-                }
-                else
-                {
-#if DEBUG && VERBOSE
-                    Plugin.Log?.Info($"New data ({data.Length}) at pos {_voipFrames} while playing at {voipSource.timeSamples}, Overlap: {voipSource.timeSamples > _voipFrames && !(voipSource.timeSamples > _voipClip.samples/2 && _voipFrames < _voipClip.samples / 2)}, Delay: {_voipFrames - voipSource.timeSamples}, Speed: {voipSource.timeSamples - lastPlayPos}, Frames: {Time.frameCount - lastFrame}");
-
-                    lastPlayPos = voipSource.timeSamples;
-                    lastFrame = Time.frameCount;
-#endif
-                    _voipDelayCounter++;
-
-                    if (!_voipPlaying && _voipDelayCounter >= _voipDelay)
-                    {
-                        _voipPlaying = true;
-                    }
-                }
-
-                _lastVoipFragIndex = fragIndex;
-                _silentFrames = 0;
-                //if (Config.Instance.VoiceChatSettings.VoiceChatVolume > 1)
-                //{
-                //    AudioUtils.ApplyGain(data, Config.Instance.VoiceChatSettings.VoiceChatVolume);
-                //}
-                _voipFragQueue.Write(data, 0, dataLength);
-            }
-        }
         protected void OnDestroy()
         {
             Plugin.Log?.Debug($"VoipReceiver destroyed.");
             Destroyed?.Invoke(this, EventArgs.Empty);
         }
-
-        public event EventHandler? Destroyed;
+        #endregion
     }
 }

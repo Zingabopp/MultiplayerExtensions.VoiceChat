@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using MultiplayerExtensions.VoiceChat.Utilities;
+using Zenject;
 
 namespace MultiplayerExtensions.VoiceChat.UI
 {
@@ -20,6 +21,20 @@ namespace MultiplayerExtensions.VoiceChat.UI
         private SpriteRenderer? _mutedSprite;
         private SpriteRenderer? _selfMutedSprite;
         public string? PlayerId { get; protected set; }
+        private IVoiceChatActivity? _chatActivity;
+        public IVoiceChatActivity? ChatActivity
+        {
+            get => _chatActivity;
+            private set
+            {
+                if (_chatActivity == value)
+                    return;
+                UnbindEvents(_chatActivity);
+                _chatActivity = value;
+                UnbindEvents(_chatActivity);
+                BindEvents(_chatActivity);
+            }
+        }
         protected SpriteRenderer TalkingSprite
         {
             get
@@ -64,7 +79,7 @@ namespace MultiplayerExtensions.VoiceChat.UI
 
         public bool IsMe
         {
-            get { return _isMe; }
+            get { return _isMe && _chatActivity != null; }
             set
             {
                 _isMe = value;
@@ -77,7 +92,7 @@ namespace MultiplayerExtensions.VoiceChat.UI
 
         public bool PlayerTalking
         {
-            get { return _playerTalking; }
+            get { return _playerTalking && _chatActivity != null; }
             set
             {
                 if (_playerMuted == value)
@@ -91,7 +106,7 @@ namespace MultiplayerExtensions.VoiceChat.UI
 
         public bool PlayerMuted
         {
-            get { return _playerMuted; }
+            get { return _playerMuted && _chatActivity != null; }
             set
             {
                 if (_playerMuted == value)
@@ -107,6 +122,48 @@ namespace MultiplayerExtensions.VoiceChat.UI
             SelfMutedSprite.enabled = IsMe && PlayerMuted;
             MutedSprite.enabled = !IsMe && PlayerMuted;
         }
+        public void Initialize(IVoiceChatActivity chatActivity)
+        {
+            ChatActivity = chatActivity;
+            if(chatActivity != null)
+            {
+                IsMe = chatActivity.Player?.isMe ?? false;
+                PlayerTalking = chatActivity.Talking;
+                PlayerMuted = chatActivity.Muted;
+            }
+            else
+            {
+                IsMe = false;
+                PlayerTalking = false;
+                PlayerMuted = false;
+            }
+        }
+
+        private void BindEvents(IVoiceChatActivity? chatActivity)
+        {
+            if (chatActivity == null)
+                return;
+            chatActivity.TalkingStateChanged += OnTalkingStateChanged;
+            chatActivity.MutedStateChanged += OnMutedStateChanged;
+        }
+
+        private void UnbindEvents(IVoiceChatActivity? chatActivity)
+        {
+            if (chatActivity == null)
+                return;
+            chatActivity.TalkingStateChanged -= OnTalkingStateChanged;
+            chatActivity.MutedStateChanged -= OnMutedStateChanged;
+        }
+
+        private void OnMutedStateChanged(object sender, bool isMuted)
+        {
+            PlayerMuted = isMuted;
+        }
+
+        private void OnTalkingStateChanged(object sender, bool isTalking)
+        {
+            PlayerTalking = isTalking;
+        }
 
         public void SetPlayerId(string playerId) => PlayerId = playerId;
         public event EventHandler<string?>? Destroyed;
@@ -116,8 +173,9 @@ namespace MultiplayerExtensions.VoiceChat.UI
         /// </summary>
         private void OnDestroy()
         {
-            Destroyed.RaiseEventSafe<string?>(this, PlayerId, nameof(Destroyed));
+            Destroyed.RaiseEventSafe(this, PlayerId, nameof(Destroyed));
         }
+
         #endregion
     }
 }

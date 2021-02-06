@@ -57,12 +57,4 @@ namespace MultiplayerExtensions.VoiceChat.Codecs
             Func<ICodecSettings, IDecoder> decoderFactory);
     }
 
-    public interface ICodecSettings
-    {
-        string CodecId { get; }
-        int SampleRate { get; set; }
-        int Channels { get; set; }
-
-        ICodecSettings Clone();
-    }
 }

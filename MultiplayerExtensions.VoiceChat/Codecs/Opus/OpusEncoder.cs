@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MultiplayerExtensions.VoiceChat.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,7 +11,7 @@ namespace MultiplayerExtensions.VoiceChat.Codecs.Opus
     {
         protected readonly Concentus.Structs.OpusEncoder Encoder;
         private static readonly int[] _validFrameDurations = new int[] { 5, 10, 20, 40, 60 };
-        private readonly OpusSettings _settings = new OpusSettings();
+        private readonly OpusSettings _settings;
         public string CodecId => OpusDefaults.CodecId;
         public int SampleRate { get => _settings.SampleRate; protected set => _settings.SampleRate = value; }
         public int Channels { get => _settings.Channels; protected set => _settings.Channels = value; }
@@ -19,37 +20,27 @@ namespace MultiplayerExtensions.VoiceChat.Codecs.Opus
         public int FrameSize => (SampleRate * Channels * FrameDuration) / 1000;
         public IReadOnlyCollection<int> ValidFrameDurations { get; } = Array.AsReadOnly(_validFrameDurations);
 
-        public OpusEncoder(int sampleRate, int numChannels, int frameDuration, int bitrate)
+        protected OpusEncoder(OpusSettings settings)
         {
-            SampleRate = sampleRate;
-            Channels = numChannels;
-            Bitrate = bitrate;
-            if (!_validFrameDurations.Contains(frameDuration))
-                throw new ArgumentException($"{nameof(frameDuration)} must be a value in {{ {string.Join(", ", _validFrameDurations)} }}", nameof(frameDuration));
-            FrameDuration = frameDuration;
-            Encoder = new Concentus.Structs.OpusEncoder(sampleRate, numChannels, Concentus.Enums.OpusApplication.OPUS_APPLICATION_VOIP)
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+
+            if (!_validFrameDurations.Contains(settings.FrameDuration))
+                throw new ArgumentException($"FrameDuration must be a value in {{ {string.Join(", ", _validFrameDurations)} }}", nameof(settings));
+            Encoder = new Concentus.Structs.OpusEncoder(settings.SampleRate, settings.Channels, Concentus.Enums.OpusApplication.OPUS_APPLICATION_VOIP)
             {
-                Bitrate = bitrate
+                Bitrate = settings.Bitrate
             };
         }
 
-        public OpusEncoder(OpusSettings s)
-            : this(s.SampleRate, s.Channels, s.FrameDuration, s.Bitrate)
+        public OpusEncoder(int sampleRate, int numChannels, int frameDuration, int bitrate)
+            : this(new OpusSettings() { SampleRate = sampleRate, Channels = numChannels, FrameDuration = frameDuration, Bitrate = bitrate })
         { }
-        public OpusEncoder(ICodecSettings s)
-        {
-            SampleRate = s.SampleRate;
-            Channels = s.Channels;
-            OpusSettings? settings = s as OpusSettings;
-            Bitrate = settings?.Bitrate ?? OpusDefaults.Bitrate;
-            FrameDuration = settings?.FrameDuration ?? OpusDefaults.FrameDuration;
-            if (!_validFrameDurations.Contains(FrameDuration))
-                throw new ArgumentException($"Invalid frame duration in settings: must be a value in {{ {string.Join(", ", _validFrameDurations)} }}", nameof(s));
-            Encoder = new Concentus.Structs.OpusEncoder(SampleRate, Channels, Concentus.Enums.OpusApplication.OPUS_APPLICATION_VOIP)
-            {
-                Bitrate = Bitrate
-            };
-        }
+
+        public OpusEncoder(ICodecSettings settings)
+            : this(OpusSettings.CloneSettings(settings ?? throw new ArgumentNullException(nameof(settings))))
+        { }
+
+        public ICodecSettings GetCodecSettings() => _settings.Clone();
 
         bool IEncoder.SettingsMatch(ICodecSettings other)
         {
@@ -58,7 +49,8 @@ namespace MultiplayerExtensions.VoiceChat.Codecs.Opus
 
         public int Encode(float[] in_data, int in_offset, int in_length, byte[] out_data, int out_offset, int out_max)
         {
-            return Encoder.Encode(in_data, in_offset, in_length / Channels, out_data, out_offset, out_max);
+            float[] data = in_data;
+            return Encoder.Encode(data, in_offset, in_length / Channels, out_data, out_offset, out_max);
         }
         public int Encode(short[] in_data, int in_offset, int in_length, byte[] out_data, int out_offset, int out_max)
         {

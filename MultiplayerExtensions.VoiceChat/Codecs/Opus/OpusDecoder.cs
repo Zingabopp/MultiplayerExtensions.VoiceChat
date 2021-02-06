@@ -10,7 +10,7 @@ namespace MultiplayerExtensions.VoiceChat.Codecs.Opus
     {
         private const int MaxGain = 7000;
         protected readonly Concentus.Structs.OpusDecoder Decoder;
-        private readonly OpusSettings _settings = new OpusSettings();
+        private readonly OpusSettings _settings;
 
         public string CodecId => OpusDefaults.CodecId;
 
@@ -26,16 +26,24 @@ namespace MultiplayerExtensions.VoiceChat.Codecs.Opus
             set => Decoder.Gain = (value * MaxGain) / 100;
         }
 
-        public OpusDecoder(int sampleRate, int numChannels)
+        protected OpusDecoder(OpusSettings settings)
         {
-            SampleRate = sampleRate;
-            Channels = numChannels;
-            Decoder = new Concentus.Structs.OpusDecoder(sampleRate, numChannels);
+            if (settings == null)
+                throw new InvalidOperationException("_settings is null.");
+            _settings = settings;
+            Decoder = new Concentus.Structs.OpusDecoder(settings.SampleRate, settings.Channels);
+            Plugin.Log?.Error($"--------------Decoder default gain: {Decoder.Gain}  ------------------");
             Decoder.Gain = 50;
         }
-        public OpusDecoder(ICodecSettings s)
-            : this(s.SampleRate, s.Channels)
+
+        public OpusDecoder(int sampleRate, int numChannels)
+            : this(new OpusSettings() { SampleRate = sampleRate, Channels = numChannels })
         { }
+        public OpusDecoder(ICodecSettings settings)
+            : this(OpusSettings.CloneSettings(settings ?? throw new ArgumentNullException(nameof(settings))))
+        { }
+
+        public ICodecSettings GetCodecSettings() => _settings.Clone();
 
         public bool SettingsMatch(ICodecSettings other)
         {

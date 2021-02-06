@@ -10,5 +10,6 @@ namespace MultiplayerExtensions.VoiceChat.Networking
     public interface IVoipPacket : INetSerializable
     {
         VoipPacketType PacketType { get; }
+        byte PacketVersion { get; }
     }
 }

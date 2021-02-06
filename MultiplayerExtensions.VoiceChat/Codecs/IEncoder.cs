@@ -29,6 +29,11 @@ namespace MultiplayerExtensions.VoiceChat.Codecs
         /// Returns a collection of valid frame durations (in milliseconds) for the <see cref="IEncoder"/>.
         /// </summary>
         IReadOnlyCollection<int> ValidFrameDurations { get; }
+        /// <summary>
+        /// Returns a clone of the current settings.
+        /// </summary>
+        /// <returns></returns>
+        ICodecSettings GetCodecSettings();
 
         /// <summary>
         /// Returns true if the given settings match the <see cref="IEncoder"/>'s relevant settings.

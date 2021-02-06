@@ -33,12 +33,21 @@ namespace MultiplayerExtensions.VoiceChat
             PluginMeta = pluginMetadata;
             Log = logger;
             Config = conf.Generated<PluginConfig>();
+            TestConfig(Config);
             Zenjector = zenjector;
             zenjector.OnApp<VoiceChatInstaller>();
             Log.Info($"MultiplayerExtensions.VoiceChat v{PluginMeta.Version}: '{VersionInfo.Description}'");
-            var thing = MultiplayerExtensions.VoiceChat.Codecs.Opus.OpusDefaults.Bitrate;
-            if (thing == 0)
-                Log.Warn("OpusDefaults is null.");
+        }
+
+        private void TestConfig(PluginConfig config)
+        {
+            config.PropertyChanged += (s, e) => { Log?.Debug($"PluginConfig.PropertyChanged: {e.PropertyName}"); };
+            if (config is INotifyPropertyChanged castConfig)
+                castConfig.PropertyChanged += (s, e) => { Log?.Debug($"INotifyPropertyChanged.PropertyChanged: {e.PropertyName}"); };
+            else
+                Log?.Error($"'{config.GetType().FullName}' is not INotifyPropertyChanged.");
+            Log?.Critical("Changing property...");
+            config.MicGain = config.MicGain + 1;
         }
 
         [OnStart]

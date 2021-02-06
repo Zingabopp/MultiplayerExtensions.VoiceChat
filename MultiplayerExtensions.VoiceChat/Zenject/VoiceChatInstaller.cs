@@ -1,7 +1,9 @@
 ﻿using MultiplayerExtensions.VoiceChat.Codecs;
 using MultiplayerExtensions.VoiceChat.Codecs.Opus;
 using MultiplayerExtensions.VoiceChat.Configuration;
+using MultiplayerExtensions.VoiceChat.HarmonyPatches;
 using MultiplayerExtensions.VoiceChat.Networking;
+using MultiplayerExtensions.VoiceChat.UI;
 using MultiplayerExtensions.VoiceChat.Utilities.Input;
 using System;
 using Zenject;
@@ -23,6 +25,9 @@ namespace MultiplayerExtensions.VoiceChat.Zenject
             Container.BindInterfacesAndSelfTo<VoipSender>().AsSingle();
             Container.Bind<VoipReceiver>().FromNewComponentOnRoot().AsTransient();
             Container.BindInterfacesAndSelfTo<VoiceChatPacketRouter>().AsSingle();
+            Container.Bind<SessionTracker>().AsSingle();
+
+            //GameServerPlayerTableCell_Patch.SessionTracker = Container.Resolve<SessionTracker>();
         }
 
         private ICodecFactory BuildFactory()

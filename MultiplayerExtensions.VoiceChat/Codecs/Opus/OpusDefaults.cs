@@ -7,5 +7,6 @@
         public static readonly int Channels = 1;
         public static readonly int Bitrate = 24000;
         public static readonly int FrameDuration = 20;
+        public static readonly int Gain = 0;
     }
 }

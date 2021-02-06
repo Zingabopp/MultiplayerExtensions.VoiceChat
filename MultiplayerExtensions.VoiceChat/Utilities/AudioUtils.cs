@@ -79,7 +79,6 @@ namespace MultiplayerExtensions.VoiceChat.Utilities
                     max = sample;
                 if (sample < min)
                     min = sample;
-
             }
             return new ClipStats(min, max, sum / length);
         }
@@ -139,18 +138,24 @@ namespace MultiplayerExtensions.VoiceChat.Utilities
             };
         }
 
-        public static float Resample(float[] source, float[] target, int inputSampleRate, int outputSampleRate, int outputChannelsNum = 1)
+        public static ClipStats Resample(float[] source, float[] target, int inputSampleRate, int outputSampleRate, int outputChannelsNum = 1)
         {
             return Resample(source, target, source.Length, target.Length, inputSampleRate, outputSampleRate, outputChannelsNum);
         }
 
-        public static float Resample(float[] source, float[] target, int inputNum, int outputNum, int inputSampleRate, int outputSampleRate, int outputChannelsNum)
+        public static ClipStats Resample(float[] source, float[] target, int inputNum, int outputNum, int inputSampleRate, int outputSampleRate, int outputChannelsNum)
         {
             float ratio = inputSampleRate / (float)outputSampleRate;
-            float maxAmplitude = -1;
+            float minAmplitude = float.MaxValue;
+            float maxAmplitude = float.MinValue;
+            float sum = 0;
+            int length = 0;
             if (ratio % 1f <= float.Epsilon)
             {
                 int intRatio = Mathf.RoundToInt(ratio);
+                int sizeRequired = inputNum * intRatio * outputChannelsNum;
+                if (sizeRequired > target.Length)
+                    throw new ArgumentException($"target's length of '{target.Length}' does not meet the minimum length of '{sizeRequired}'.");
                 for (int i = 0; i < (outputNum / outputChannelsNum) && (i * intRatio) < inputNum; i++)
                 {
                     for (int j = 0; j < outputChannelsNum; j++)
@@ -159,7 +164,11 @@ namespace MultiplayerExtensions.VoiceChat.Utilities
                         float sourceSample = source[i * intRatio];
                         if (sourceSample > maxAmplitude)
                             maxAmplitude = sourceSample;
+                        if (sourceSample < minAmplitude)
+                            minAmplitude = sourceSample;
+                        sum += sourceSample;
                         target[targetIndex] = sourceSample;
+                        length++;
                     }
                 }
             }
@@ -167,6 +176,9 @@ namespace MultiplayerExtensions.VoiceChat.Utilities
             {
                 if (ratio > 1f)
                 {
+                    int sizeRequired = Mathf.CeilToInt(inputNum * ratio);
+                    if (sizeRequired > target.Length)
+                        throw new ArgumentException($"target's length of '{target.Length}' does not meet the minimum length of '{sizeRequired}'.");
                     for (int i = 0; i < (outputNum / outputChannelsNum) && Mathf.CeilToInt(i * ratio) < inputNum; i++)
                     {
                         for (int j = 0; j < outputChannelsNum; j++)
@@ -175,12 +187,19 @@ namespace MultiplayerExtensions.VoiceChat.Utilities
                             float sourceSample = Mathf.Lerp(source[Mathf.FloorToInt(i * ratio)], source[Mathf.CeilToInt(i * ratio)], ratio % 1);
                             if (sourceSample > maxAmplitude)
                                 maxAmplitude = sourceSample;
+                            if (sourceSample < minAmplitude)
+                                minAmplitude = sourceSample;
+                            sum += sourceSample;
                             target[targetIndex] = sourceSample;
+                            length++;
                         }
                     }
                 }
                 else
                 {
+                    int sizeRequired = Mathf.FloorToInt(inputNum * ratio);
+                    if (sizeRequired > target.Length)
+                        throw new ArgumentException($"target's length of '{target.Length}' does not meet the minimum length of '{sizeRequired}'.");
                     for (int i = 0; i < (outputNum / outputChannelsNum) && Mathf.FloorToInt(i * ratio) < inputNum; i++)
                     {
                         for (int j = 0; j < outputChannelsNum; j++)
@@ -189,12 +208,16 @@ namespace MultiplayerExtensions.VoiceChat.Utilities
                             float sourceSample = source[Mathf.FloorToInt(i * ratio)];
                             if (sourceSample > maxAmplitude)
                                 maxAmplitude = sourceSample;
-                            target[targetIndex] = sourceSample; ;
+                            if (sourceSample < minAmplitude)
+                                minAmplitude = sourceSample;
+                            sum += sourceSample;
+                            target[targetIndex] = sourceSample;
+                            length++;
                         }
                     }
                 }
             }
-            return maxAmplitude;
+            return new ClipStats(minAmplitude, maxAmplitude, sum / length);
         }
 
         public static int GetFreqForMic(string? deviceName = null)

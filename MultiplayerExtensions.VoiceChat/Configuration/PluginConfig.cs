@@ -1,14 +1,17 @@
-﻿using System;
-using System.Runtime.CompilerServices;
-using IPA.Config.Stores;
+﻿using IPA.Config.Stores;
 using IPA.Config.Stores.Attributes;
-using IPA.Config.Stores.Converters;
 using Newtonsoft.Json;
+using System;
+using System.ComponentModel;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo(GeneratedStore.AssemblyVisibilityTarget)]
 namespace MultiplayerExtensions.VoiceChat.Configuration
 {
-    internal class PluginConfig : IVoiceSettings
+    [NotifyPropertyChanges]
+    internal class PluginConfig : IVoiceSettings, INotifyPropertyChanged
     {
         private int voiceChatGain = 0;
         private int micGain = 0;
@@ -26,14 +29,16 @@ namespace MultiplayerExtensions.VoiceChat.Configuration
             get => voiceChatGain;
             set
             {
-                value = Math.Min(value, 100);
+                value = Math.Min(value, 100); // If min/max change, must adjust GetMicGainFloat in Utilities/Extensions.cs
                 value = Math.Max(value, -50);
                 if (micGain == value)
                     return;
                 micGain = value;
                 RaiseVoiceSettingChanged();
+                //PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("-MicGain-"));
             }
         }
+
         [SerializedName(nameof(VoiceChatGain))]
         [JsonProperty(nameof(VoiceChatGain), Order = 10)]
         public virtual int VoiceChatGain
@@ -43,7 +48,7 @@ namespace MultiplayerExtensions.VoiceChat.Configuration
             {
                 value = Math.Min(value, 100);
                 value = Math.Max(value, -50);
-                if (voiceChatGain == value) 
+                if (voiceChatGain == value)
                     return;
                 voiceChatGain = value;
                 VoiceChatGainChanged?.Invoke(this, value);
@@ -127,6 +132,62 @@ namespace MultiplayerExtensions.VoiceChat.Configuration
         {
             // This instance's members populated from other
         }
-    }
 
+        public virtual event PropertyChangedEventHandler? PropertyChanged;
+
+        public void RaisePropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        //public void PrintNotifyStuff()
+        //{
+        //    PropertyChangedEventHandler? del = PropertyChanged;
+        //    BindingFlags flags = (BindingFlags)int.MaxValue;
+        //    FieldInfo[]? fields = this.GetType().GetFields(flags);
+        //    Plugin.Log?.Info($"Fields: {string.Join(", ", fields.Select(f => f.Name))}");
+        //    if (del == null)
+        //        Plugin.Log?.Error("PropertyChanged is null");
+        //    else
+        //    {
+        //        Plugin.Log?.Warn($"PropertyChanged Delegates: {string.Join(", ", del.GetInvocationList().Select(d => d.Method.Name))}");
+        //    }
+        //    FieldInfo? genField = this.GetType().GetField("<event>PropertyChanged", flags);
+        //    PropertyChangedEventHandler? genFieldValue = genField?.GetValue(this) as PropertyChangedEventHandler;
+        //    if (genFieldValue == null)
+        //        Plugin.Log?.Error("Generaged PropertyChanged is null");
+        //    else
+        //    {
+        //        Plugin.Log?.Warn($"Generaged PropertyChanged Delegates: {string.Join(", ", genFieldValue.GetInvocationList().Select(d => d.Method.Name))}");
+        //    }
+        //}
+        //BindingFlags flags = (BindingFlags)int.MaxValue;
+        //private PropertyChangedEventHandler? _genHandler;
+
+        //private PropertyChangedEventHandler? GenHandler
+        //{
+        //    get
+        //    {
+        //        if (_genHandler == null)
+        //        {
+        //            _genHandler = GenField.GetValue(this) as PropertyChangedEventHandler;
+        //        }
+        //        return _genHandler;
+        //    }
+        //    set
+        //    {
+        //        GenField.SetValue(this, value);
+        //    }
+        //}
+
+        //private FieldInfo? _genField;
+
+        //private FieldInfo GenField
+        //{
+        //    get
+        //    {
+        //        if (_genField == null)
+        //            _genField = this.GetType().GetField("<event>PropertyChanged", flags);
+        //        return _genField;
+        //    }
+        //}
+
+
+    }
 }

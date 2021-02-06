@@ -12,14 +12,74 @@ using Zenject;
 
 namespace MultiplayerExtensions.VoiceChat
 {
-    public class VoipSender : ITickable
+    public class VoipSender : ITickable, IVoiceChatActivity
     {
-        private bool _enabled;
+        #region IVoiceChatActivity
+        //public event EventHandler? Destroyed;
+        public event EventHandler<bool>? TalkingStateChanged;
+        public event EventHandler<bool>? MutedStateChanged;
+        #region Settings
+        private bool micEnabled;
+        private float micGain;
+        public string? SelectedMicrophone
+        {
+            get => _usedMicrophone;
+            set
+            {
+                if (value == null || value.Length == 0)
+                    value = null;
+                if (_usedMicrophone == value)
+                    return;
+                if (value != null)
+                {
+                    string device = Microphone.devices.Where(d => d.Equals(value, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                    if (device != null)
+                    {
+                        _usedMicrophone = device;
+                        if (_recordingActive)
+                        {
+                            StopRecording();
+                            StartRecording();
+                        }
+                    }
+                    else
+                        Plugin.Log?.Warn($"'{value}' does not appear to be a valid microphone.");
+                }
 
+            }
+        }
+        #endregion
+
+        public IConnectedPlayer Player { get; private set; } = null!;
+
+        private bool _talking;
+        public bool Talking
+        {
+            get { return _talking; }
+            set
+            {
+                if (_talking == value) return;
+                _talking = value;
+                TalkingStateChanged.RaiseEventSafe(this, value, nameof(TalkingStateChanged));
+            }
+        }
+
+        private bool _muted;
+        public bool Muted
+        {
+            get { return _muted; }
+            set
+            {
+                if (_muted == value) return;
+                _muted = value;
+                MutedStateChanged.RaiseEventSafe(this, value, nameof(MutedStateChanged));
+            }
+        }
+        #endregion
         public bool Enabled
         {
-            get { return _enabled && _voiceSettings.EnableVoiceChat; }
-            internal set { _enabled = value; }
+            get { return micEnabled && _voiceSettings.EnableVoiceChat; }
+            internal set { micEnabled = value; }
         }
 
         private IEncoder _encoder;
@@ -61,34 +121,6 @@ namespace MultiplayerExtensions.VoiceChat
             }
         }
 
-        public string? SelectedMicrophone
-        {
-            get => _usedMicrophone;
-            set
-            {
-                if (value == null || value.Length == 0)
-                    value = null;
-                if (_usedMicrophone == value)
-                    return;
-                if (value != null)
-                {
-                    string device = Microphone.devices.Where(d => d.Equals(value, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
-                    if (device != null)
-                    {
-                        _usedMicrophone = device;
-                        if (_recordingActive)
-                        {
-                            StopRecording();
-                            StartRecording();
-                        }
-                    }
-                    else
-                        Plugin.Log?.Warn($"'{value}' does not appear to be a valid microphone.");
-                }
-
-            }
-        }
-
         public VoipSender(ICodecFactory codecFactory, IEncoder encoder, IVoiceSettings voiceSettings, IInputController inputController)
         {
             Plugin.Log?.Info("Created VoipSender");
@@ -97,13 +129,29 @@ namespace MultiplayerExtensions.VoiceChat
             _inputController = inputController;
             _voiceSettings = voiceSettings;
             _voiceSettings.VoiceSettingChanged += OnVoiceSettingChanged;
+            micGain = _voiceSettings.GetMicGainFloat();
+            micEnabled = _voiceSettings.MicEnabled;
             SelectedMicrophone = _voiceSettings.VoiceChatMicrophone;
         }
 
         private void OnVoiceSettingChanged(object sender, string? e)
         {
-            if (e == nameof(IVoiceSettings.VoiceChatMicrophone))
-                SelectedMicrophone = _voiceSettings.VoiceChatMicrophone;
+            if (e == null)
+                return;
+            switch (e)
+            {
+                case nameof(IVoiceSettings.MicGain):
+                    micGain = _voiceSettings.GetMicGainFloat();
+                    break;
+                case nameof(IVoiceSettings.MicEnabled):
+                    micEnabled = _voiceSettings.MicEnabled;
+                    break;
+                case nameof(IVoiceSettings.VoiceChatMicrophone):
+                    SelectedMicrophone = _voiceSettings.VoiceChatMicrophone;
+                    break;
+                default:
+                    break;
+            }
         }
 
         public void StartRecording()
@@ -114,15 +162,13 @@ namespace MultiplayerExtensions.VoiceChat
             if ((_usedMicrophone?.Length ?? -1) == 0)
                 _usedMicrophone = null;
             inputFreq = AudioUtils.GetFreqForMic(_usedMicrophone);
-            if (_encoder == null || _encoder.SampleRate != inputFreq)
+            if (_encoder.SampleRate != inputFreq)
             {
-                // TODO: Make it not Opus specific.
-                var settings = _codecFactory.GetDefaultSettings(_encoder?.CodecId ?? OpusDefaults.CodecId)
-                    ?? new OpusSettings(); 
+                var settings = _encoder.GetCodecSettings();
                 settings.SampleRate = inputFreq;
-                settings.Channels = 1;
                 _encoder = _codecFactory.CreateEncoder(settings.CodecId, settings);
             }
+            // TODO: * 1 * is specific to settings.Channels?
             int sizeRequired = (inputFreq * 1 * _encoder.FrameDuration) / 1000;
             recordingBuffer = new float[sizeRequired];
             if (sizeRequired != _encoder.FrameSize)
@@ -161,7 +207,7 @@ namespace MultiplayerExtensions.VoiceChat
 
         public void Tick()
         {
-            if (!_enabled)
+            if (!Enabled)
                 return;
             if (recording == null)
                 return;
@@ -208,8 +254,8 @@ namespace MultiplayerExtensions.VoiceChat
                             AudioUtils.Resample(recordingBuffer, resampleBuffer, inputFreq, _encoder.SampleRate);
                             buffer = resampleBuffer;
                         }
-                        // TODO: Adjustable mic gain
-                        var clipInfo = AudioUtils.ApplyGain(buffer, 1.5f);
+                        // TODO: Combine with Resample?
+                        var clipInfo = AudioUtils.ApplyGain(buffer, micGain);
                         maxAmplitude = clipInfo.MaxAmplitude;
                         numSamples++;
                         if (clipInfo.MaxAmplitude > maxSample)

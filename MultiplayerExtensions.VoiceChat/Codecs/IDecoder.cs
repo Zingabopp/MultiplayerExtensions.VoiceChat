@@ -15,6 +15,15 @@
         /// </summary>
         int Channels { get; }
         /// <summary>
+        /// Gain to apply to decoded audio. (-50 to 100)
+        /// </summary>
+        int Gain { get; set; }
+        /// <summary>
+        /// Returns a clone of the current settings.
+        /// </summary>
+        /// <returns></returns>
+        ICodecSettings GetCodecSettings();
+        /// <summary>
         /// Returns true if the given settings match the <see cref="IDecoder"/>'s relevant settings.
         /// Only compares values the <see cref="IDecoder"/> uses.
         /// </summary>

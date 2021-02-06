@@ -10,16 +10,19 @@ namespace MultiplayerExtensions.VoiceChat.Codecs.Opus
     {
         public static OpusSettings CloneSettings(ICodecSettings codecSettings)
         {
+            if (codecSettings == null)
+                throw new ArgumentNullException(nameof(codecSettings));
             if (codecSettings is OpusSettings opusSettings)
                 return opusSettings.Clone();
             else
             {
                 return new OpusSettings()
                 {
-                    SampleRate = codecSettings?.SampleRate ?? OpusDefaults.SampleRate,
-                    Channels = codecSettings?.Channels ?? OpusDefaults.Channels,
+                    SampleRate = codecSettings.SampleRate,
+                    Channels = codecSettings.Channels,
+                    DecoderGain = codecSettings.DecoderGain,
                     FrameDuration = OpusDefaults.FrameDuration,
-                    Bitrate = OpusDefaults.Bitrate
+                    Bitrate = OpusDefaults.Bitrate,
                 };
             }
         }
@@ -30,6 +33,7 @@ namespace MultiplayerExtensions.VoiceChat.Codecs.Opus
             Channels = OpusDefaults.Channels;
             Bitrate = OpusDefaults.Bitrate;
             FrameDuration = OpusDefaults.FrameDuration;
+            DecoderGain = OpusDefaults.Gain;
         }
 
         public string CodecId => OpusDefaults.CodecId;
@@ -38,6 +42,7 @@ namespace MultiplayerExtensions.VoiceChat.Codecs.Opus
         public int Channels { get; set; }
         public int FrameDuration { get; set; }
         public int Bitrate { get; set; }
+        public int DecoderGain { get; set; }
 
         public int FrameSize => (SampleRate * Channels * FrameDuration) / 1000;
 
@@ -46,7 +51,8 @@ namespace MultiplayerExtensions.VoiceChat.Codecs.Opus
             SampleRate = SampleRate,
             Channels = Channels,
             Bitrate = Bitrate,
-            FrameDuration = FrameDuration
+            FrameDuration = FrameDuration,
+            DecoderGain = DecoderGain
         };
         ICodecSettings ICodecSettings.Clone() => Clone();
 
@@ -61,7 +67,8 @@ namespace MultiplayerExtensions.VoiceChat.Codecs.Opus
                    SampleRate == other.SampleRate &&
                    Channels == other.Channels &&
                    FrameDuration == other.FrameDuration &&
-                   Bitrate == other.Bitrate;
+                   Bitrate == other.Bitrate &&
+                   DecoderGain == other.DecoderGain;
         }
 
         public bool Equals(ICodecSettings? other)
@@ -71,8 +78,24 @@ namespace MultiplayerExtensions.VoiceChat.Codecs.Opus
             return other != null &&
                    SampleRate == other.SampleRate &&
                    Channels == other.Channels &&
+                   DecoderGain == other.DecoderGain &&
                    FrameDuration == OpusDefaults.FrameDuration &&
                    Bitrate == OpusDefaults.Bitrate;
+        }
+
+
+        public void UpdateFrom(ICodecSettings? other)
+        {
+            if (other == null)
+                return;
+            SampleRate = other.SampleRate;
+            Channels = other.Channels;
+            DecoderGain = other.DecoderGain;
+            if (other is OpusSettings opusSettings)
+            {
+                FrameDuration = opusSettings.FrameDuration;
+                Bitrate = opusSettings.Bitrate;
+            }
         }
 
         public override int GetHashCode()
@@ -83,6 +106,7 @@ namespace MultiplayerExtensions.VoiceChat.Codecs.Opus
                 hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(CodecId);
                 hashCode = hashCode * -1521134295 + SampleRate.GetHashCode();
                 hashCode = hashCode * -1521134295 + Channels.GetHashCode();
+                hashCode = hashCode * -1521134295 + DecoderGain.GetHashCode();
                 hashCode = hashCode * -1521134295 + FrameDuration.GetHashCode();
                 hashCode = hashCode * -1521134295 + Bitrate.GetHashCode();
                 return hashCode;

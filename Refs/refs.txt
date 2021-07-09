@@ -21,6 +21,7 @@
 """InputLegacyModule.dll?alias=Beat Saber_Data\Managed\UnityEngine.InputLegacyModule.dll
 """InputModule.dll?alias=Beat Saber_Data\Managed\UnityEngine.InputModule.dll
 """VRModule.dll?alias=Beat Saber_Data\Managed\UnityEngine.VRModule.dll
+"""XRModule.dll?alias=Beat Saber_Data\Managed\UnityEngine.XRModule.dll
 ""Zenject.dll?alias=Beat Saber_Data\Managed\Zenject.dll
 ""Zenject-usage.dll?alias=Beat Saber_Data\Managed\Zenject-usage.dll
 
@@ -29,6 +30,7 @@
 ""BSML.dll?alias=Plugins\BSML.dll
 ""SiraUtil.dll?alias=Plugins\SiraUtil.dll
 ""SongCore.dll?alias=Plugins\SongCore.dll
+""MultiplayerExtensions.dll?alias=Plugins\MultiplayerExtensions.dll
 
 "Libs/
 ""0Harmony.dll?alias=Libs\0Harmony.dll

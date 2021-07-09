@@ -5,8 +5,6 @@ VisualStudioVersion = 16.0.30709.132
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MultiplayerExtensions.VoiceChat", "MultiplayerExtensions.VoiceChat\MultiplayerExtensions.VoiceChat.csproj", "{C07B3757-B068-42A5-87C5-71301C483A6C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MultiplayerExtensions", "MultiplayerExtensions\MultiplayerExtensions\MultiplayerExtensions.csproj", "{A5D28D24-051C-4E8D-AAC4-A118494D7E0A}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CollectDependencies", "BS-Plugin-BuildTools\CollectDependencies\CollectDependencies.csproj", "{5F33B310-DC8D-4C0D-877E-BAC3908DE10F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{5582E8A9-05A2-4260-8E73-55BE0995046E}"
@@ -24,8 +22,6 @@ Global
 		{C07B3757-B068-42A5-87C5-71301C483A6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C07B3757-B068-42A5-87C5-71301C483A6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C07B3757-B068-42A5-87C5-71301C483A6C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A5D28D24-051C-4E8D-AAC4-A118494D7E0A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A5D28D24-051C-4E8D-AAC4-A118494D7E0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5F33B310-DC8D-4C0D-877E-BAC3908DE10F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5F33B310-DC8D-4C0D-877E-BAC3908DE10F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection

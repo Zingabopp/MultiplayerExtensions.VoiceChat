@@ -35,7 +35,7 @@ namespace MultiplayerExtensions.VoiceChat
             Config = conf.Generated<PluginConfig>();
             TestConfig(Config);
             Zenjector = zenjector;
-            zenjector.OnApp<VoiceChatInstaller>();
+            zenjector.Install<VoiceChatInstaller>(Location.App);
             Log.Info($"MultiplayerExtensions.VoiceChat v{PluginMeta.Version}: '{VersionInfo.Description}'");
         }
 

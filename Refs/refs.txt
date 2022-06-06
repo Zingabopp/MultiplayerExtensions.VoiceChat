@@ -7,7 +7,6 @@
 ""HMUI.dll?virt?alias=Beat Saber_Data\Managed\HMUI.dll
 ""LiteNetLib.dll?virt?alias=Beat Saber_Data\Managed\LiteNetLib.dll
 ""Main.dll?virt?alias=Beat Saber_Data\Managed\Main.dll
-""MediaLoader.dll?virt?alias=Beat Saber_Data\Managed\MediaLoader.dll
 ""netstandard.dll?alias=Beat Saber_Data\Managed\netstandard.dll
 ""Unity.TextMeshPro.dll?alias=Beat Saber_Data\Managed\Unity.TextMeshPro.dll
 ""UnityEngine.
@@ -30,7 +29,7 @@
 ""BSML.dll?alias=Plugins\BSML.dll
 ""SiraUtil.dll?alias=Plugins\SiraUtil.dll
 ""SongCore.dll?alias=Plugins\SongCore.dll
-""MultiplayerExtensions.dll?alias=Plugins\MultiplayerExtensions.dll
+""MultiplayerCore.dll?alias=Plugins\MultiplayerCore.dll
 
 "Libs/
 ""0Harmony.dll?alias=Libs\0Harmony.dll

@@ -35,7 +35,7 @@ namespace MultiplayerExtensions.VoiceChat.HarmonyPatches
         }
         private static readonly Dictionary<string, GameServerPlayerTableCell> cells = new Dictionary<string, GameServerPlayerTableCell>();
 
-        static void Postfix(IConnectedPlayer connectedPlayer, ILobbyPlayerDataModel playerDataModel, GameServerPlayerTableCell __instance)
+        static void Postfix(IConnectedPlayer connectedPlayer, ILobbyPlayerData playerDataModel, GameServerPlayerTableCell __instance)
         {
             cells[connectedPlayer.userId] = __instance;
             SessionTracker? tracker = SessionTracker;
